@@ -98,6 +98,8 @@
 - [x] `base` `/work-schedule/` 유지, 배포 빌드에 CSP·Referrer-Policy meta 주입
 - [x] GitHub Pages 워크플로에 환경변수(Actions Variables) 연결
 - [x] 공개 전 점검: 비밀값·개인정보·근무 데이터 없음
-- [ ] git 저장소 생성·첫 커밋, GitHub `ch0rong/work-schedule` 공개 저장소 생성·업로드 (승인 필요)
-- [ ] Pages 소스 = GitHub Actions, Actions Variables 설정, Google OAuth 승인된 원본에 `https://ch0rong.github.io` 추가 (사용자)
-- [ ] 배포 사이트에서 로그인·다른 계정 차단·Drive 저장 확인
+- [x] git 저장소 생성·첫 커밋, GitHub `ch0rong/work-schedule` 공개 저장소 생성·업로드 (2026-10-20)
+- [x] Pages 소스 = GitHub Actions, Actions Variables 설정, Google OAuth 승인된 원본에 `https://ch0rong.github.io` 추가
+- [x] 배포 사이트(https://ch0rong.github.io/work-schedule/)에서 본인 계정 로그인 확인 (2026-10-20)
+- [ ] 다른 계정 차단·Drive 저장 확인
+- [ ] 로컬(localhost) 데이터 JSON 백업 → 배포 사이트에서 가져오기 → 다른 컴퓨터에서 같은 데이터 확인 (11단계)
