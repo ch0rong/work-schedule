@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+.DS_Store
+dist-ssr/
+*.local
+*.log
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Python 가상환경 (세액표 파싱 도구)
+.venv/
+__pycache__/

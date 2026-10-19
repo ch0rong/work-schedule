@@ -1,0 +1,480 @@
+/* ---------- 폼 ---------- */
+.form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field > label,
+.field > legend {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.field input:not([type='checkbox'], [type='radio'], [type='color']),
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field [aria-invalid='true'] {
+  border-color: var(--color-danger);
+  border-width: 2px;
+}
+
+.field-row,
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.field-row > .hint {
+  grid-column: 1 / -1;
+}
+
+.inline-field {
+  grid-auto-flow: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.field-error {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  color: var(--color-danger);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.field-error::before {
+  content: '⚠ ';
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  column-gap: var(--space-3);
+}
+
+.color-input {
+  width: 72px;
+  height: var(--touch-target);
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.segmented {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.segmented-option {
+  position: relative;
+}
+
+.segmented-option input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented-option span {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 var(--space-4);
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.segmented-option input:checked + span {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  font-weight: 700;
+}
+
+.segmented-option input:focus-visible + span {
+  outline: 3px solid var(--color-focus);
+}
+
+/* ---------- 버튼 보조 ---------- */
+.icon-button {
+  width: var(--touch-target);
+  padding: 0;
+}
+
+.button-small {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  font-size: 0.875rem;
+}
+
+.button-group {
+  display: inline-flex;
+}
+
+.button-group .button {
+  border-radius: 0;
+}
+
+.button-group .button + .button {
+  margin-left: -1px;
+}
+
+.button-group .button:first-child {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.button-group .button:last-child {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.button[aria-pressed='true'] {
+  position: relative;
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* ---------- 카드 · 목록 ---------- */
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.badge {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.entry-list,
+.rule-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.entry-item:hover {
+  background: var(--color-bg);
+}
+
+.entry-item-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.entry-item-title {
+  font-weight: 600;
+}
+
+.entry-note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.type-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 6px;
+  border-radius: 50%;
+}
+
+.rule-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.type-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.type-swatch {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgb(0 0 0 / 10%);
+  border-radius: var(--radius-sm);
+}
+
+.detail-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.detail-list > div {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: var(--space-2);
+}
+
+.detail-list dt {
+  color: var(--color-text-muted);
+}
+
+.detail-list dd {
+  margin: 0;
+}
+
+.pre-wrap {
+  white-space: pre-wrap;
+}
+
+.note-list {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.text-danger {
+  color: var(--color-danger);
+}
+
+/* ---------- 요약 ---------- */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+
+.stat-card {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.stat-label {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-sub {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.empty-state {
+  padding: var(--space-4);
+  border: 1px dashed var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+}
+
+.year-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ---------- 표 ---------- */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table thead th {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table tfoot th,
+.table tfoot td {
+  font-weight: 700;
+}
+
+.total-row th,
+.total-row td {
+  border-bottom: 0;
+  color: var(--color-primary);
+  font-size: 1.0625rem;
+}
+
+/* ---------- 알림 상자 ---------- */
+.alert-warning {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.alert-info {
+  align-items: flex-start;
+  margin: 0;
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+}
+
+/* ---------- 달력 ---------- */
+.calendar-page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.calendar-layout {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.calendar {
+  min-width: 0;
+}
+
+.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.calendar-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.calendar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.calendar-scroll {
+  overflow-x: auto;
+}
+
+/* 주간 시간표는 좁은 화면에서 가로 스크롤 */
+.view-timeGridWeek .calendar-scroll > * {
+  min-width: 640px;
+}
+
+.calendar .is-selected-day {
+  background: var(--color-primary-soft);
+}
+
+.calendar .event-off {
+  opacity: 0.75;
+  text-decoration: line-through;
+}
+
+.date-jump {
+  max-width: 260px;
+}
+
+@media (min-width: 1200px) {
+  .calendar-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+  }
+}

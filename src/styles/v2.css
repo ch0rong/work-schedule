@@ -1,0 +1,679 @@
+/* ---------- v2: 공휴일·매식비 색상 ---------- */
+:root {
+  --color-holiday: #d0312d;
+  --color-meal: #8a6100;
+  --color-meal-soft: #fff3cd;
+  --color-done: #1f7a45;
+  --color-done-soft: #e6f5ec;
+}
+
+/* ---------- 공통 보조 ---------- */
+.nowrap {
+  white-space: nowrap;
+}
+
+.align-end {
+  align-self: end;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.subcard {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.subsection-title {
+  margin-top: var(--space-2);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.inline-row,
+.deduction-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.inline-row input:not([type='checkbox']),
+.deduction-row input,
+.deduction-row select {
+  min-height: 40px;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.inline-row input:not([type='checkbox'], [type='time']) {
+  flex: 1 1 140px;
+}
+
+.deduction-row input:first-child {
+  flex: 1 1 140px;
+}
+
+.deduction-row input[type='number'],
+.deduction-row input[inputmode='numeric'] {
+  width: 120px;
+}
+
+.table-input {
+  width: 72px;
+  margin-right: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+/* 바로가기로 이동했을 때 제목이 상단에 붙지 않게 */
+.section-title {
+  scroll-margin-top: var(--space-4);
+}
+
+.compact-list {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+/* ---------- 배지 ---------- */
+.badge-meal {
+  border-color: var(--color-meal);
+  background: var(--color-meal-soft);
+  color: var(--color-meal);
+}
+
+.badge-done {
+  border-color: var(--color-done);
+  background: var(--color-done-soft);
+  color: var(--color-done);
+}
+
+.badge-warning {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+/* ---------- 요약 카드 ---------- */
+.stat-warning {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.stat-button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stat-button:hover {
+  border-color: var(--color-primary);
+}
+
+.stat-unit {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.small-value {
+  font-size: 1rem;
+}
+
+.summary-grid.compact {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ---------- 선택 날짜 패널 ---------- */
+.day-facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.day-facts > div {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.day-facts dt {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.day-facts dd {
+  margin: 0;
+}
+
+.holiday-label {
+  color: var(--color-holiday);
+  font-weight: 600;
+}
+
+/* ---------- 일정 폼 ---------- */
+.overtime-box {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.overtime-box > legend {
+  padding: 0 var(--space-1);
+}
+
+.overtime-summary {
+  display: grid;
+  gap: 2px;
+}
+
+.usage-form {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+/* ---------- 표 ---------- */
+.subtotal-row th,
+.subtotal-row td {
+  background: var(--color-bg);
+  font-weight: 600;
+}
+
+.is-current-row th,
+.is-current-row td {
+  background: var(--color-primary-soft);
+}
+
+/* ---------- 공휴일 ---------- */
+.holiday-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.holiday-date {
+  display: inline-block;
+  min-width: 128px;
+  color: var(--color-holiday);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* ---------- 달력 날짜 칸 ---------- */
+.day-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 4px;
+  font-size: 0.8125rem;
+}
+
+.day-holiday {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--color-holiday);
+  font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-meal {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--color-meal-soft);
+  color: var(--color-meal);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+/* 토요일 파랑, 일요일·공휴일 빨강 (공휴일이 토요일이면 빨강), 주말·공휴일 배경 구분 */
+:root {
+  --color-saturday: #1d5fd1;
+  --color-weekend-bg: #f2f3f5;
+  --color-holiday-bg: #fff3f3;
+}
+
+.calendar .is-sat,
+.calendar .is-sun {
+  background: var(--color-weekend-bg);
+}
+
+.calendar .is-holiday,
+.calendar .is-custom-holiday {
+  background: var(--color-holiday-bg);
+}
+
+/* 글자색은 날짜 숫자와 요일 머리글에만 (일정 글자색에는 영향 없음) */
+.calendar .is-sat .day-number,
+.calendar [role='columnheader'].is-sat {
+  color: var(--color-saturday);
+}
+
+.calendar .is-sun .day-number,
+.calendar .is-holiday .day-number,
+.calendar .is-custom-holiday .day-number,
+.calendar [role='columnheader'].is-sun,
+.calendar [role='columnheader'].is-holiday,
+.calendar [role='columnheader'].is-custom-holiday {
+  color: var(--color-holiday);
+}
+
+.calendar .is-sat .day-number,
+.calendar .is-sun .day-number,
+.calendar .is-holiday .day-number,
+.calendar .is-custom-holiday .day-number {
+  font-weight: 700;
+}
+
+/* 선택한 날짜는 주말·공휴일보다 눈에 띄게 */
+.calendar .is-selected-day {
+  background: var(--color-primary-soft);
+}
+
+.calendar .is-custom-holiday .day-number {
+  text-decoration: underline dashed;
+  text-underline-offset: 3px;
+}
+
+.calendar .event-trip {
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .day-holiday {
+    display: none;
+  }
+
+  .summary-grid.compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ---------- 로그인·세션 ---------- */
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.login-card {
+  max-width: 420px;
+  justify-items: start;
+  padding: var(--space-6) var(--space-5);
+}
+
+.login-icon {
+  color: var(--color-primary);
+}
+
+.login-button {
+  width: 100%;
+}
+
+.app-header {
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.session-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.session-email {
+  overflow: hidden;
+  max-width: 220px;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.sync-saved,
+.sync-idle {
+  color: var(--color-done);
+}
+
+.sync-saving {
+  color: var(--color-text-muted);
+}
+
+.sync-error,
+.sync-conflict,
+.sync-auth {
+  color: var(--color-danger);
+}
+
+@media (max-width: 600px) {
+  .session-email {
+    display: none;
+  }
+}
+
+/* ---------- 입력 폭: 화면 폭만큼 늘어나지 않게 ---------- */
+.field select {
+  justify-self: start;
+  width: auto;
+  min-width: 10rem;
+  max-width: 100%;
+}
+
+.field > input:not([type='checkbox'], [type='radio'], [type='color']) {
+  max-width: 22rem;
+}
+
+.field-row,
+.field-grid {
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 15rem));
+}
+
+.field-row .field > input:not([type='checkbox'], [type='radio'], [type='color']),
+.field-grid .field > input:not([type='checkbox'], [type='radio'], [type='color']) {
+  max-width: none;
+}
+
+.inline-row input:not([type='checkbox'], [type='time']) {
+  flex: 0 1 14rem;
+}
+
+.deduction-row input:first-child {
+  flex: 0 1 12rem;
+}
+
+/* ---------- 대체휴무 발생 건 선택 ---------- */
+.comp-options {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comp-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.comp-option:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.comp-option.is-disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.comp-option input {
+  margin-top: 4px;
+}
+
+/* ---------- 날짜 메모 ---------- */
+.day-note-form {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.day-note-form textarea {
+  width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+
+.day-note {
+  overflow: hidden;
+  flex-basis: 100%;
+  max-width: 100%;
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-note::before {
+  content: '✎ ';
+}
+
+/* 날짜 칸 전체를 눌러 선택할 수 있다는 표시 */
+.calendar [data-date] {
+  cursor: pointer;
+}
+
+/* ---------- 시각 선택: 오전/오후 · 시 · 분 ---------- */
+.time-select {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+  max-width: 100%;
+}
+
+.field .time-select select,
+.time-select select {
+  width: auto;
+  min-width: 0;
+  min-height: var(--touch-target);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+/* ---------- 당직 일괄 등록: 날짜 다중 선택 달력 ---------- */
+.duty-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+  max-width: 24rem;
+}
+
+.duty-grid-head {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.duty-day {
+  position: relative;
+  min-height: var(--touch-target);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.duty-day.is-holiday {
+  color: var(--color-danger);
+}
+
+.duty-day.is-selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-weight: 700;
+}
+
+.duty-day:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.duty-day-mark {
+  position: absolute;
+  right: 4px;
+  bottom: 0;
+  font-size: 0.75rem;
+}
+
+/* ---------- 마이페이지: 탭 + 가운데 정렬된 좁은 폭 ---------- */
+.mypage {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.mypage-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mypage-tab {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.mypage-tab:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* 지금 보고 있는 메뉴: 채운 배경 + 굵게 + 밑줄 (색만으로 구분하지 않는다) */
+.mypage-tab.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mypage-panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* 좁아진 카드 안에서 입력칸이 찌그러지지 않게 */
+.mypage .card {
+  padding: var(--space-4) var(--space-5);
+}
+
+.mypage .field-row,
+.mypage .field-grid {
+  gap: var(--space-3) var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+}
+
+.mypage .field select,
+.mypage .field > input:not([type='checkbox'], [type='radio'], [type='color']) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.mypage .inline-row,
+.mypage .deduction-row {
+  gap: var(--space-2);
+}
+
+.mypage .button-row {
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 600px) {
+  .mypage .card {
+    padding: var(--space-3);
+  }
+
+  .mypage .field-row,
+  .mypage .field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- 공휴일: 마이페이지와 같은 가운데 정렬된 좁은 폭 ---------- */
+.holiday-page {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.holiday-page .card {
+  padding: var(--space-4) var(--space-5);
+}
+
+.holiday-page .year-nav {
+  justify-content: center;
+}
+
+/* 법정공휴일 목록: 상자 대신 줄로 구분해 촘촘하게 */
+.holiday-page .holiday-list {
+  gap: 0;
+}
+
+.holiday-page .holiday-list .rule-item {
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+}
+
+.holiday-page .holiday-list .rule-item:last-child {
+  border-bottom: 0;
+}
+
+.holiday-page .rule-item .badge {
+  margin-left: var(--space-1);
+}
+
+@media (max-width: 600px) {
+  .holiday-page .card {
+    padding: var(--space-3);
+  }
+
+  .holiday-date {
+    min-width: 0;
+    margin-right: var(--space-1);
+  }
+}
