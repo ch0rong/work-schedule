@@ -129,6 +129,8 @@ export function ScheduleCalendar({ data, selectedDate, holidays, mealDates, dayN
           eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
           dayCellClass={(info) => dayClass(info.date, true)}
           dayLaneClass={(info) => dayClass(info.date, true)}
+          dayCellTopClass="day-cell-top"
+          dayCellTopInnerClass="day-cell-top-inner"
           dayHeaderClass={(info) => (info.view.type === 'timeGridWeek' ? dayClass(info.date, false) : weekdayClass(info.date))}
           dayCellTopContent={(info) => {
             const date = toDateString(info.date)

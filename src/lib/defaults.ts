@@ -1,9 +1,9 @@
 import { format } from 'date-fns'
 import { SCHEMA_VERSION, type AppData, type PayProfile, type Settings, type WorkType } from './schema'
 
-/** DESIGN.md 색상 원칙에 따른 기본 근무 유형. id는 v1과 호환되도록 기본근무 'work', 휴무 'off'를 유지한다. */
+/** DESIGN.md 색상 원칙에 따른 기본 근무 유형. id는 v1과 호환되도록 정규 근무 'work', 휴무 'off'를 유지한다. */
 export const DEFAULT_WORK_TYPES: readonly WorkType[] = [
-  { id: 'work', name: '기본근무', color: '#4776E6', countsAsWork: true, archived: false, category: 'regular' },
+  { id: 'work', name: '정규 근무', color: '#4776E6', countsAsWork: true, archived: false, category: 'regular' },
   { id: 'flex', name: '유연근무', color: '#1A9AA0', countsAsWork: true, archived: false, category: 'flex' },
   { id: 'weekday-duty', name: '평일 당직', color: '#E07B1A', countsAsWork: true, archived: false, category: 'weekday-duty' },
   { id: 'weekend-duty', name: '주말 당직', color: '#B4530F', countsAsWork: true, archived: false, category: 'weekend-duty' },
@@ -108,6 +108,7 @@ export function createDefaultData(now: Date = new Date()): AppData {
     holidays: { custom: [], overrides: [] },
     dayNotes: {},
     compDismissals: [],
+    todos: [],
     updatedAt: now.toISOString(),
   }
 }

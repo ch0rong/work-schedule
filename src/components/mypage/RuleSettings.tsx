@@ -53,7 +53,7 @@ export function ScheduleSettings() {
         )
         return (
           <>
-            {shift('regular', '평일 기본근무')}
+            {shift('regular', '평일 정규 근무')}
             {shift('weekdayDuty', '평일 당직')}
             {shift('weekendDuty', '주말 당직')}
             <fieldset className="field">

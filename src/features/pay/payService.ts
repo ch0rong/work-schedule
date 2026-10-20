@@ -177,3 +177,11 @@ export function estimateMonthlyPay(data: AppData, month: string, isHoliday: (dat
 export function setPayrollRecord(data: AppData, month: string, record: PayrollRecord): AppData {
   return { ...data, payrollRecords: { ...data.payrollRecords, [month]: record } }
 }
+
+/** 급여 초기화: 해당 월에 저장한 급여 기록(실제 입금액·메모)을 지운다 */
+export function clearPayrollRecord(data: AppData, month: string): AppData {
+  if (!(month in data.payrollRecords)) return data
+  const payrollRecords = { ...data.payrollRecords }
+  delete payrollRecords[month]
+  return { ...data, payrollRecords }
+}

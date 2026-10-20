@@ -53,7 +53,7 @@ export function tripEntry(overrides: Partial<TripEntry> = {}): TripEntry {
   }
 }
 
-/** 기본근무 09:00~18:00 + 연장 구간 */
+/** 정규 근무 09:00~18:00 + 연장 구간 */
 export function overtimeEntry(id: string, date: string, start: string, end: string, overrides: Partial<WorkEntry> = {}): WorkEntry {
   return workEntry({ id, date, endDate: date, overtime: [{ startTime: start, endTime: end, endsNextDay: end < start }], ...overrides })
 }

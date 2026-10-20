@@ -18,8 +18,17 @@ export type LoadResult =
   /** localStorage를 사용할 수 없음 (브라우저 설정 등) */
   | { status: 'unavailable'; data: AppData; message: string }
 
-/** reason — conflict: 다른 기기에서 먼저 저장됨, auth: 로그인 만료 */
-export type SaveResult = { ok: true } | { ok: false; message: string; reason?: 'conflict' | 'auth' }
+/** reason — auth: 로그인 만료, remote-changed: 다른 기기에서 먼저 저장됨 (remote와 병합한 뒤 다시 저장) */
+export type SaveResult =
+  | { ok: true }
+  | { ok: false; message: string; reason?: 'auth' }
+  | { ok: false; message: string; reason: 'remote-changed'; remote: AppData }
+
+/** 다른 기기의 변경 확인 결과 */
+export type PullResult =
+  | { status: 'unchanged' }
+  | { status: 'changed'; data: AppData }
+  | { status: 'error'; message: string; reason?: 'auth' }
 
 /**
  * 버전별 마이그레이션. key 버전의 데이터를 key+1 버전으로 바꾼다.
@@ -64,13 +73,21 @@ export function migrateData(
   return { ok: true, data }
 }
 
+/** 기본 근무 유형의 옛 이름. 사용자가 바꾸지 않았으면 새 이름으로 바꾼다 (2026-10-20 '기본근무' → '정규 근무') */
+const RENAMED_WORK_TYPES: Record<string, { from: string; to: string }> = { work: { from: '기본근무', to: '정규 근무' } }
+
+function renameDefaultWorkTypes(data: AppData): AppData {
+  if (!data.workTypes.some((type) => RENAMED_WORK_TYPES[type.id]?.from === type.name)) return data
+  return { ...data, workTypes: data.workTypes.map((type) => (RENAMED_WORK_TYPES[type.id]?.from === type.name ? { ...type, name: RENAMED_WORK_TYPES[type.id].to } : type)) }
+}
+
 /** 마이그레이션 후 스키마를 검증한다. */
 export function validateAppData(raw: unknown): ValidationResult {
   const migrated = migrateData(raw)
   if (!migrated.ok) return migrated
   const parsed = appDataSchema.safeParse(migrated.data)
   if (!parsed.success) return { ok: false, errors: formatSchemaIssues(parsed.error) }
-  return { ok: true, data: parsed.data }
+  return { ok: true, data: renameDefaultWorkTypes(parsed.data) }
 }
 
 /** localStorage 접근 자체가 예외를 던지는 환경(차단 설정 등)이 있어 안전하게 가져온다. */

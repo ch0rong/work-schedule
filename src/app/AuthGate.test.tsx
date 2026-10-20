@@ -24,7 +24,7 @@ function fakeRepository(initial: AppData | null) {
       stored = data
       return { ok: true as const }
     }),
-    forceSave: vi.fn(async () => ({ ok: true as const })),
+    pull: vi.fn(async () => ({ status: 'unchanged' as const })),
   }
   return repository
 }

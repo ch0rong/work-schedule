@@ -21,6 +21,8 @@ type GateState =
   | { kind: 'ready'; store: AppStore; repository: DriveRepository; email: string }
 
 const IDLE_CHECK_MS = 30_000
+/** 화면을 보고 있는 동안 다른 기기 변경을 확인하는 간격 */
+const SYNC_POLL_MS = 5_000
 
 /** 메모리에만 두는 액세스 토큰 (localStorage·쿠키에 저장하지 않음) */
 class TokenHolder {
@@ -75,7 +77,7 @@ export function AuthGate({
       setState({ kind: 'busy', label: 'Google Drive에서 데이터를 불러오는 중…' })
       const repository = createRepository(() => token.get()?.value ?? '')
       const loaded = await repository.load()
-      const store = createStore(loaded, (data) => repository.save(data))
+      const store = createStore(loaded, (data) => repository.save(data), undefined, () => repository.pull())
       setState({ kind: 'ready', store, repository, email: result.email })
     } catch (error) {
       token.set(null)
@@ -136,22 +138,28 @@ export function AuthGate({
     await ready.store.retrySave()
   }, [ready, verify, logout, token])
 
-  const reload = useCallback(async () => {
-    if (!ready) return
-    const loaded = await ready.repository.load()
-    if (loaded.status === 'loaded' || loaded.status === 'empty') ready.store.applyRemote(loaded.data)
-  }, [ready])
-
-  const forceSave = useCallback(async () => {
-    if (!ready) return
-    const data = ready.store.getState().data
-    const result = await ready.repository.forceSave(data)
-    if (result.ok) ready.store.applyRemote(data)
-  }, [ready])
+  // 실시간 동기화: 화면을 보는 동안 주기적으로, 그리고 창으로 돌아오거나 네트워크가 다시 연결되면 바로 다른 기기 변경을 가져와 합친다
+  useEffect(() => {
+    if (state.kind !== 'ready' || expired) return
+    const { store } = state
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void store.refresh()
+    }
+    const timer = window.setInterval(refresh, SYNC_POLL_MS)
+    window.addEventListener('focus', refresh)
+    window.addEventListener('online', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('online', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [state, expired])
 
   const session = useMemo<Session | null>(
-    () => (ready ? { email: ready.email, expired, logout, reauth, reload, forceSave } : null),
-    [ready, expired, logout, reauth, reload, forceSave],
+    () => (ready ? { email: ready.email, expired, logout, reauth } : null),
+    [ready, expired, logout, reauth],
   )
 
   if (ready && session) {

@@ -74,13 +74,13 @@ describe('근무 일정', () => {
     expect(store.getState().data.entries).toHaveLength(1)
     expect(JSON.parse(storage.items.get(STORAGE_KEY)!).entries).toHaveLength(1)
 
-    await user.click(within(dayPanel()).getByRole('button', { name: /기본근무/ }))
+    await user.click(within(dayPanel()).getByRole('button', { name: /정규 근무/ }))
     await user.click(screen.getByRole('button', { name: '수정' }))
     await fill(user, screen.getByLabelText('휴게시간 (분)'), '30')
     await user.click(screen.getByRole('button', { name: '저장' }))
     expect(store.getState().data.entries[0]).toMatchObject({ breakMinutes: 30 })
 
-    await user.click(within(dayPanel()).getByRole('button', { name: /기본근무/ }))
+    await user.click(within(dayPanel()).getByRole('button', { name: /정규 근무/ }))
     await user.click(screen.getByRole('button', { name: '삭제' }))
     await user.click(within(screen.getByRole('dialog', { name: '일정을 삭제할까요?' })).getByRole('button', { name: '삭제' }))
     expect(store.getState().data.entries).toHaveLength(0)
@@ -195,7 +195,7 @@ describe('달력', () => {
     ]
     setup(sampleData({ entries }))
     const cell = dateCell('2026-10-15')
-    expect(within(cell).getByText('기본근무')).toBeInTheDocument()
+    expect(within(cell).getByText('정규 근무')).toBeInTheDocument()
     expect(within(cell).getByText('유연근무 +1:00')).toBeInTheDocument()
     expect(within(cell).getByText('외출')).toBeInTheDocument()
     expect(within(cell).queryByText(/^\+\d+/)).not.toBeInTheDocument() // "+1개" 더보기 링크 없음
@@ -470,7 +470,7 @@ describe('일괄 등록', () => {
     await user.click(screen.getByRole('button', { name: '일괄 등록' }))
     const dialog = screen.getByRole('dialog', { name: '일괄 등록' })
     expect(within(dialog).getByText('2026년 10월')).toBeInTheDocument()
-    expect(within(dialog).getByLabelText('근무 종류')).toHaveValue('work') // 기본근무가 먼저
+    expect(within(dialog).getByLabelText('근무 종류')).toHaveValue('work') // 정규 근무가 먼저
     expect(timeValue(dialog, '시작 시각')).toBe('09:00')
     await user.selectOptions(within(dialog).getByLabelText('근무 종류'), 'weekday-duty')
     expect(timeValue(dialog, '시작 시각')).toBe('12:30') // 평일 당직 기본 시간
@@ -492,7 +492,7 @@ describe('일괄 등록', () => {
     expect(screen.getByRole('status')).toHaveTextContent('평일 당직 2일을 등록했습니다.')
   })
 
-  it('기본근무를 평일에 일괄 등록한다', async () => {
+  it('정규 근무를 평일에 일괄 등록한다', async () => {
     const { user, store } = setup(sampleData({ entries: [] }))
     await user.click(screen.getByRole('button', { name: '일괄 등록' }))
     const dialog = screen.getByRole('dialog', { name: '일괄 등록' })
@@ -501,7 +501,7 @@ describe('일괄 등록', () => {
     await user.click(within(dialog).getByRole('button', { name: '3일 등록' }))
     expect(store.getState().data.entries).toHaveLength(3)
     expect(store.getState().data.entries[0]).toMatchObject({ workTypeId: 'work', startTime: '09:00', endTime: '18:00', breakMinutes: 60 })
-    expect(screen.getByRole('status')).toHaveTextContent('기본근무 3일을 등록했습니다.')
+    expect(screen.getByRole('status')).toHaveTextContent('정규 근무 3일을 등록했습니다.')
   })
 
   it('주말 당직으로 바꾸면 주말·공휴일만 고를 수 있고 기본 시간이 바뀐다', async () => {
@@ -594,5 +594,59 @@ describe('급여', () => {
     await user.click(within(section).getByLabelText(/근로기준법/))
     await user.click(within(section).getByRole('button', { name: '저장' }))
     expect(store.getState().data.settings.regulation).toBe('labor-standards')
+  })
+})
+
+describe('할 일', () => {
+  const saved = (storage: ReturnType<typeof memoryStorage>) => (JSON.parse(storage.items.get(STORAGE_KEY)!) as AppData).todos
+  const todoRegion = () => screen.getByRole('region', { name: '할 일' })
+  const texts = () => within(todoRegion()).queryAllByRole('textbox', { name: '할 일 내용' }) as HTMLTextAreaElement[]
+
+  it('Enter로 다음 할 일을 추가하고, 빈 칸에서 Backspace로 지운다', async () => {
+    const { storage, user } = setup(sampleData())
+    await user.click(within(todoRegion()).getByRole('button', { name: '할 일 추가' }))
+    await user.keyboard('보고서 제출{Enter}회의 준비')
+    expect(saved(storage).map((todo) => todo.text)).toEqual(['보고서 제출', '회의 준비'])
+    expect(texts()[1]).toHaveFocus()
+
+    await user.keyboard('{Enter}')
+    expect(texts()).toHaveLength(3)
+    await user.keyboard('{Backspace}')
+    expect(saved(storage).map((todo) => todo.text)).toEqual(['보고서 제출', '회의 준비'])
+    expect(texts()[1]).toHaveFocus()
+  })
+
+  it('글자를 눌러 바로 고치고, 체크하면 완료(취소선)로 표시한다', async () => {
+    const { storage, user } = setup(sampleData({ todos: [{ id: 'a', text: '장보기', done: false }] }))
+    await user.click(texts()[0])
+    await user.keyboard('{End} 우유')
+    expect(saved(storage)[0].text).toBe('장보기 우유')
+    await user.click(within(todoRegion()).getByRole('checkbox', { name: '"장보기 우유" 완료' }))
+    expect(saved(storage)[0].done).toBe(true)
+    expect(texts()[0].closest('li')).toHaveClass('is-done')
+  })
+
+  it('손잡이에서 Alt 없이 ↑/↓, 글 칸에서 Alt+↑/↓로 순서를 바꾼다', async () => {
+    const { storage, user } = setup(sampleData({ todos: [{ id: 'a', text: 'A', done: false }, { id: 'b', text: 'B', done: false }] }))
+    await user.click(texts()[1])
+    await user.keyboard('{Alt>}{ArrowUp}{/Alt}')
+    expect(saved(storage).map((todo) => todo.id)).toEqual(['b', 'a'])
+    within(todoRegion()).getByRole('button', { name: /"B" 순서 변경/ }).focus()
+    await user.keyboard('{ArrowDown}')
+    expect(saved(storage).map((todo) => todo.id)).toEqual(['a', 'b'])
+  })
+})
+
+describe('급여 초기화', () => {
+  it('확인 후 해당 월의 저장된 급여 데이터를 지운다', async () => {
+    const { storage, user } = setup(sampleData({ payrollRecords: { '2026-10': { actualDeposit: 2_500_000, note: '입금' }, '2026-09': { actualDeposit: 1, note: '' } } }))
+    await user.click(screen.getByRole('button', { name: /월별 급여/ }))
+    expect(screen.getByLabelText('실제 입금액 (원)')).toHaveValue('2,500,000')
+    await user.click(screen.getByRole('button', { name: '급여 초기화' }))
+    await user.click(within(screen.getByRole('dialog', { name: /급여를 초기화할까요/ })).getByRole('button', { name: '초기화' }))
+    const records = (JSON.parse(storage.items.get(STORAGE_KEY)!) as AppData).payrollRecords
+    expect(records).toEqual({ '2026-09': { actualDeposit: 1, note: '' } })
+    expect(screen.getByLabelText('실제 입금액 (원)')).toHaveValue('')
+    expect(screen.getByRole('button', { name: '급여 초기화' })).toBeDisabled()
   })
 })

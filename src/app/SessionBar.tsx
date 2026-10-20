@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, CheckCircle2, CloudOff, Loader2, LogOut, RefreshCw } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, CloudOff, Loader2, LogOut } from 'lucide-react'
 import { Dialog } from '../components/common/Dialog'
 import type { SyncStatus } from '../lib/store'
 import { useSession } from './sessionContext'
@@ -10,7 +10,6 @@ const STATUS: Record<SyncStatus, { label: string; icon: typeof CheckCircle2 }> =
   saving: { label: '저장 중…', icon: Loader2 },
   saved: { label: '저장됨', icon: CheckCircle2 },
   error: { label: '저장 실패', icon: CloudOff },
-  conflict: { label: '충돌', icon: AlertTriangle },
   auth: { label: '로그인 필요', icon: AlertTriangle },
 }
 
@@ -63,7 +62,7 @@ export function SessionBar() {
   )
 }
 
-/** 로그인 만료·동기화 충돌 안내 */
+/** 로그인 만료 안내 (다른 기기 변경은 자동으로 병합되어 따로 묻지 않는다) */
 export function SessionAlerts() {
   const session = useSession()
   const { syncStatus, saveError } = useAppState()
@@ -89,26 +88,6 @@ export function SessionAlerts() {
           <button type="button" className="button button-small button-primary" disabled={busy} onClick={run(session.reauth)}>
             다시 로그인
           </button>
-        </div>
-      </div>
-    )
-  }
-  if (syncStatus === 'conflict') {
-    return (
-      <div className="alert alert-warning" role="alert">
-        <AlertTriangle aria-hidden="true" size={18} className="alert-icon" />
-        <div>
-          <p className="alert-title">다른 기기에서 데이터가 바뀌었습니다</p>
-          <p>{saveError} 덮어쓰기 전에 마이페이지에서 JSON 백업을 내려받을 수 있습니다.</p>
-          <div className="button-row">
-            <button type="button" className="button button-small" disabled={busy} onClick={run(session.reload)}>
-              <RefreshCw aria-hidden="true" size={14} />
-              다른 기기 데이터 불러오기 (이 화면의 저장 안 된 변경 버림)
-            </button>
-            <button type="button" className="button button-small button-danger" disabled={busy} onClick={run(session.forceSave)}>
-              내 데이터로 덮어쓰기
-            </button>
-          </div>
         </div>
       </div>
     )

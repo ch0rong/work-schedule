@@ -12,7 +12,7 @@ import { isMultiDayTrip, TRIP_LABELS, tripMinutes, tripNights } from '../travel/
 export const LONG_SHIFT_MINUTES = 12 * 60
 
 export const CATEGORY_LABELS: Record<WorkCategory, string> = {
-  regular: '기본근무',
+  regular: '정규 근무',
   flex: '유연근무',
   'weekday-duty': '평일 당직',
   'weekend-duty': '주말 당직',
@@ -52,7 +52,7 @@ export function holidayWorkShift(startTime: string, breakMinutes: number): Shift
   return { startTime, endTime: toTime(end), endsNextDay: end >= MINUTES_PER_DAY, breakMinutes }
 }
 
-/** 근무 유형 분류에 따른 기본 시간. 사용자 정의 유형은 기본근무 시간, 휴일근무는 시작 + 8시간(휴게 0)을 제안한다. */
+/** 근무 유형 분류에 따른 기본 시간. 사용자 정의 유형은 정규 근무 시간, 휴일근무는 시작 + 8시간(휴게 0)을 제안한다. */
 export function defaultShift(category: WorkCategory, settings: Settings, flexStart?: string): ShiftTimes {
   const { regular, weekdayDuty, weekendDuty } = settings.schedule
   const fromShift = (shift: typeof regular): ShiftTimes => ({

@@ -15,7 +15,7 @@ describe('toCalendarEvents', () => {
       ],
     })
     const [work, leave] = toCalendarEvents(data)
-    expect(work).toMatchObject({ id: 'n', title: '기본근무', start: '2026-10-19T22:00', end: '2026-10-20T06:00', allDay: false })
+    expect(work).toMatchObject({ id: 'n', title: '정규 근무', start: '2026-10-19T22:00', end: '2026-10-20T06:00', allDay: false })
     expect(leave).toMatchObject({ id: 'l', title: '연차', start: '2026-12-30', end: '2027-01-01', allDay: true })
   })
 })
@@ -44,11 +44,11 @@ describe('ScheduleCalendar', () => {
     )
 
     expect(await screen.findByRole('heading', { name: '2026년 10월' })).toBeInTheDocument()
-    const monthEvent = screen.getByText('기본근무')
+    const monthEvent = screen.getByText('정규 근무')
     expect(monthEvent.closest('[data-date]')).toHaveAttribute('data-date', '2026-10-21')
 
     await userEvent.click(screen.getByRole('button', { name: '주간' }))
-    const weekEvent = await screen.findByText('기본근무')
+    const weekEvent = await screen.findByText('정규 근무')
     expect(weekEvent.closest('[data-date]')).toHaveAttribute('data-date', '2026-10-21')
 
     await userEvent.click(weekEvent)

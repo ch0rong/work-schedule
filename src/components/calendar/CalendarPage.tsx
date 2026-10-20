@@ -9,6 +9,7 @@ import { EntryDialog, type EntryDialogTarget } from '../schedule/EntryDialog'
 import { DayEntryList } from '../schedule/DayEntryList'
 import { WorkBulkDialog } from '../schedule/DutyBulkDialog'
 import { SummaryCards } from '../summary/SummaryCards'
+import { TodoList } from '../todo/TodoList'
 import { MealPanel } from './MealPanel'
 import { ScheduleCalendar, type VisibleRange } from './ScheduleCalendar'
 import { TravelPanel } from './TravelPanel'
@@ -60,7 +61,7 @@ export function CalendarPage() {
           onEventClick={(entryId) => setDialog({ mode: 'view', entryId })}
         />
 
-        <div className="stack">
+        <div className="stack calendar-side">
           <button type="button" className="button" onClick={() => setBulkOpen(true)}>
             <CalendarRange aria-hidden="true" size={18} />
             일괄 등록
@@ -75,6 +76,10 @@ export function CalendarPage() {
             onSelectEntry={openEntry}
             onOpenMeal={(date) => setMealPanel({ month: date.slice(0, 7), focusDate: date })}
           />
+        </div>
+
+        <div className="calendar-todo">
+          <TodoList />
         </div>
       </div>
 

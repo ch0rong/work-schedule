@@ -224,8 +224,26 @@
 }
 
 /* ---------- 달력 날짜 칸 ---------- */
+/* 날짜는 셀 왼쪽 위에 굵게 (테마 기본값은 오른쪽 정렬) */
+.calendar .day-cell-top {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.calendar .day-cell-top-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.calendar .day-number {
+  font-weight: 700;
+}
+
 .day-top {
   display: flex;
+  justify-content: flex-start;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 2px 4px;
@@ -373,7 +391,6 @@
 }
 
 .sync-error,
-.sync-conflict,
 .sync-auth {
   color: var(--color-danger);
 }
@@ -676,4 +693,136 @@
     min-width: 0;
     margin-right: var(--space-1);
   }
+}
+
+/* ---------- 급여 초기화 ---------- */
+.year-nav:has(.pay-reset-button) {
+  flex-wrap: wrap;
+}
+
+.pay-reset-button {
+  margin-left: auto;
+}
+
+/* ---------- 할 일 (노션 스타일) ---------- */
+.todo-card {
+  gap: var(--space-2);
+}
+
+.todo-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.todo-item {
+  display: grid;
+  grid-template-columns: 20px 18px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-1) var(--space-2);
+  padding: 2px 0;
+  border-radius: var(--radius-sm);
+}
+
+.todo-item:hover,
+.todo-item:focus-within {
+  background: var(--color-bg);
+}
+
+.todo-item.is-dragging {
+  background: var(--color-primary-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.todo-list.is-sorting {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.todo-handle {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: grab;
+  opacity: 0;
+  touch-action: none;
+}
+
+.todo-item:hover .todo-handle,
+.todo-item:focus-within .todo-handle,
+.todo-item.is-dragging .todo-handle,
+.todo-handle:focus-visible {
+  opacity: 1;
+}
+
+/* 터치 화면은 마우스 올림이 없으므로 손잡이를 항상 보인다 */
+@media (hover: none) {
+  .todo-handle {
+    opacity: 0.6;
+  }
+}
+
+.todo-check {
+  width: 16px;
+  height: 16px;
+  margin: 6px 0 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.todo-text {
+  width: 100%;
+  min-height: 28px;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  line-height: 1.45;
+  resize: none;
+  overflow: hidden;
+  field-sizing: content;
+}
+
+.todo-text:focus {
+  outline: none;
+}
+
+.todo-text::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+.todo-item.is-done .todo-text {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.todo-add {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--space-1);
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.todo-add:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
 }

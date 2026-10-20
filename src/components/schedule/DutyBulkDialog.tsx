@@ -19,7 +19,7 @@ interface WorkBulkDialogProps {
   onClose: () => void
 }
 
-/** 일괄 등록: 기본근무·평일 당직·주말 당직 중 하나를 고르고, 달력에서 여러 날짜를 선택, 시간은 한 번만 입력한다. */
+/** 일괄 등록: 정규 근무·평일 당직·주말 당직 중 하나를 고르고, 달력에서 여러 날짜를 선택, 시간은 한 번만 입력한다. */
 export function WorkBulkDialog({ open, initialMonth, onClose }: WorkBulkDialogProps) {
   return (
     <Dialog open={open} title="일괄 등록" onClose={onClose}>
@@ -39,7 +39,7 @@ function WorkBulkForm({ initialMonth, onClose }: { initialMonth: string; onClose
   const fid = (name: string) => `${formId}-${name}`
   const settings = data.settings
 
-  // 기본근무 → 평일 당직 → 주말 당직 순
+  // 정규 근무 → 평일 당직 → 주말 당직 순
   const bulkTypes = BULK_WORK_CATEGORIES.flatMap((category) => data.workTypes.filter((type) => !type.archived && type.category === category))
   const initialType = bulkTypes[0]
   const initialShift = defaultShift(initialType?.category ?? 'regular', settings)
@@ -64,7 +64,7 @@ function WorkBulkForm({ initialMonth, onClose }: { initialMonth: string; onClose
 
   const category = bulkTypes.find((type) => type.id === typeId)?.category
   const weekend = category === 'weekend-duty'
-  /** 주말 당직은 주말·공휴일, 기본근무·평일 당직은 평일만 고를 수 있다 */
+  /** 주말 당직은 주말·공휴일, 정규 근무·평일 당직은 평일만 고를 수 있다 */
   const matchesType = (date: string) => isWeekendOrHoliday(date, isHoliday) === weekend
 
   const range = monthRange(month)
@@ -119,7 +119,7 @@ function WorkBulkForm({ initialMonth, onClose }: { initialMonth: string; onClose
   }
 
   if (bulkTypes.length === 0) {
-    return <p className="muted">숨기지 않은 기본근무·당직 유형이 없습니다. 마이페이지의 근무 유형에서 다시 표시하세요.</p>
+    return <p className="muted">숨기지 않은 정규 근무·당직 유형이 없습니다. 마이페이지의 근무 유형에서 다시 표시하세요.</p>
   }
 
   const [year, monthNumber] = month.split('-').map(Number)

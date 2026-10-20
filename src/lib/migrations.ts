@@ -71,6 +71,7 @@ export function migrateV1ToV2(raw: Record<string, unknown>, now: Date = new Date
     holidays: { custom: [], overrides: [] },
     dayNotes: {},
     compDismissals: [],
+    todos: [],
     // v2에 대응 항목이 없는 v1 설정은 버리지 않고 원본 그대로 보존한다
     legacy: {
       v1Pay: pay,

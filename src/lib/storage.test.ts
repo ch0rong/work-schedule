@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { FIXED_NOW, memoryStorage, sampleData } from '../test/fixtures'
 import { backupFileName, createBackup, parseBackup, serializeBackup } from './backup'
 import { createAppStore } from './store'
-import { loadData, migrateData, saveData, STORAGE_KEY } from './storage'
+import { loadData, migrateData, saveData, STORAGE_KEY, validateAppData } from './storage'
 
 describe('loadData', () => {
   it('저장된 데이터가 없으면 기본 데이터로 시작한다', () => {
@@ -147,5 +147,15 @@ describe('createAppStore', () => {
     expect(store.replaceAll(sampleData()).ok).toBe(true)
     expect(store.getState().invalid).toBeNull()
     expect(loadData(storage).status).toBe('loaded')
+  })
+})
+
+describe('기본 근무 유형 이름 변경', () => {
+  it("옛 이름 '기본근무'는 '정규 근무'로 바꾸고, 사용자가 바꾼 이름은 그대로 둔다", () => {
+    const data = sampleData()
+    const old = { ...data, workTypes: data.workTypes.map((type) => (type.id === 'work' ? { ...type, name: '기본근무' } : type)) }
+    expect(validateAppData(old)).toMatchObject({ ok: true, data: { workTypes: expect.arrayContaining([expect.objectContaining({ id: 'work', name: '정규 근무' })]) } })
+    const custom = { ...data, workTypes: data.workTypes.map((type) => (type.id === 'work' ? { ...type, name: '주간' } : type)) }
+    expect(validateAppData(custom)).toMatchObject({ ok: true, data: { workTypes: expect.arrayContaining([expect.objectContaining({ id: 'work', name: '주간' })]) } })
   })
 })

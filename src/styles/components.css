@@ -472,9 +472,39 @@
   max-width: 260px;
 }
 
+/* 근무표(달력)와 오른쪽 열: 선택 날짜 패널 + 할 일. 아주 넓은 화면에서는 할 일을 세 번째 열로 */
 @media (min-width: 1200px) {
   .calendar-layout {
     grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'calendar side'
+      'calendar todo';
     align-items: start;
+  }
+
+  .calendar-layout > .calendar {
+    grid-area: calendar;
+  }
+
+  .calendar-side {
+    grid-area: side;
+  }
+
+  .calendar-todo {
+    grid-area: todo;
+  }
+}
+
+@media (min-width: 1600px) {
+  .calendar-layout {
+    grid-template-columns: minmax(0, 1fr) 300px 300px;
+    grid-template-rows: auto;
+    grid-template-areas: 'calendar side todo';
+  }
+
+  .calendar-todo {
+    position: sticky;
+    top: var(--space-4);
   }
 }

@@ -43,7 +43,7 @@
 | `leave.officialDeducts`, `leave.sickDeducts` | 공가·병가 연차 차감 | `false`, `false` |
 | `leave.publicServantTable` | 공무원 재직기간별 연가일수 `[{ minMonths, days }]` | 공식 규정 값 |
 | `leave.grants` | 부여 기간별 직접 입력 `{ [periodKey]: { days: number \| null, extraDays, note } }` — `days`가 null이면 자동 참고값 사용. periodKey: 회계연도 `YYYY`, 입사일 기준 기간 시작일 `YYYY-MM-DD` | `{}` |
-| `schedule.regular` | 기본근무 `{ start, end, breakMinutes }` | 09:00, 18:00, 60 |
+| `schedule.regular` | 정규 근무 `{ start, end, breakMinutes }` | 09:00, 18:00, 60 |
 | `schedule.weekdayDuty` | 평일 당직 | 12:30, 21:30, 60 |
 | `schedule.weekendDuty` | 주말 당직 | 09:00, 18:00, 60 |
 | `schedule.flex` | 유연근무 `{ netMinutes, breakMinutes }` | 480, 60 |

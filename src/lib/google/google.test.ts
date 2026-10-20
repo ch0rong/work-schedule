@@ -91,17 +91,30 @@ describe('Drive 저장소', () => {
     expect(reloaded.status).toBe('loaded')
   })
 
-  it('다른 기기에서 먼저 저장했으면 덮어쓰지 않고 충돌로 알린다. 덮어쓰기를 고르면 저장한다', async () => {
+  it('다른 기기에서 먼저 저장했으면 덮어쓰지 않고 그 데이터를 돌려준다', async () => {
     const drive = fakeDrive()
     const repository = createDriveRepository(drive.client)
     await repository.load()
     await repository.save(sampleData())
     drive.otherDeviceWrites(JSON.stringify(sampleData({ entries: [] })))
 
-    expect(await repository.save(sampleData())).toMatchObject({ ok: false, reason: 'conflict' })
+    const result = await repository.save(sampleData())
+    expect(result).toMatchObject({ ok: false, reason: 'remote-changed' })
+    expect(result.ok === false && result.reason === 'remote-changed' && result.remote.entries).toEqual([])
     expect(JSON.parse(drive.content()!).entries).toEqual([])
-    expect(await repository.forceSave(sampleData())).toEqual({ ok: true })
-    expect(JSON.parse(drive.content()!).entries).toHaveLength(2)
+    // 받은 버전을 기준으로 다시 저장하면 성공
+    expect(await repository.save(sampleData())).toEqual({ ok: true })
+  })
+
+  it('pull: 버전이 같으면 unchanged, 다른 기기가 저장하면 changed', async () => {
+    const drive = fakeDrive()
+    const repository = createDriveRepository(drive.client)
+    await repository.load()
+    await repository.save(sampleData())
+    expect(await repository.pull()).toEqual({ status: 'unchanged' })
+    drive.otherDeviceWrites(JSON.stringify(sampleData({ entries: [] })))
+    expect(await repository.pull()).toMatchObject({ status: 'changed', data: { entries: [] } })
+    expect(await repository.pull()).toEqual({ status: 'unchanged' })
   })
 
   it('로그인 만료는 auth 사유로 돌려준다', async () => {
@@ -138,14 +151,46 @@ describe('비동기 저장 store', () => {
     expect(store.getState().syncStatus).toBe('saved')
   })
 
-  it('충돌 상태에서는 변경을 막고, 다시 불러오면 풀린다', async () => {
-    const store = createStore({ status: 'loaded', data: sampleData() }, async () => ({ ok: false, reason: 'conflict', message: '충돌' }))
-    store.update((data) => ({ ...data, entries: [] }))
+  it('다른 기기에서 먼저 저장했으면 자동으로 병합해 다시 저장한다 (알림 없음)', async () => {
+    const drive = fakeDrive()
+    const repoA = createDriveRepository(drive.client)
+    const repoB = createDriveRepository(drive.client)
+    const storeA = createStore(await repoA.load(), (data) => repoA.save(data), undefined, () => repoA.pull())
+    storeA.update((data) => ({ ...data, dayNotes: { '2026-10-01': '처음' } }))
+    await storeA.flush()
+    const storeB = createStore(await repoB.load(), (data) => repoB.save(data), undefined, () => repoB.pull())
+
+    // 두 기기가 서로 다른 곳을 고친다
+    storeA.update((data) => ({ ...data, todos: [{ id: 'a', text: '집에서 추가', done: false }] }))
+    await storeA.flush()
+    storeB.update((data) => ({ ...data, dayNotes: { ...data.dayNotes, '2026-10-02': '회사에서 추가' } }))
+    await storeB.flush()
+    expect(storeB.getState().syncStatus).toBe('saved')
+    expect(storeB.getState().data.todos).toEqual([{ id: 'a', text: '집에서 추가', done: false }])
+
+    // A는 주기 확인(refresh)으로 B의 변경을 받는다
+    await storeA.refresh()
+    expect(storeA.getState().data.dayNotes).toEqual({ '2026-10-01': '처음', '2026-10-02': '회사에서 추가' })
+    const saved = JSON.parse(drive.content()!)
+    expect(saved.todos).toHaveLength(1)
+    expect(saved.dayNotes).toEqual({ '2026-10-01': '처음', '2026-10-02': '회사에서 추가' })
+  })
+
+  it('refresh: 이 기기의 저장 안 된 변경은 유지하고 다른 기기 변경과 합쳐 저장한다', async () => {
+    const drive = fakeDrive()
+    const repo = createDriveRepository(drive.client)
+    let failing = true
+    const store = createStore(await repo.load(), async (data) => (failing ? { ok: false as const, message: '네트워크' } : repo.save(data)), undefined, () => repo.pull())
+    await drive.client.create(JSON.stringify(sampleData({ dayNotes: { '2026-10-03': '원격' } })))
+    store.update((data) => ({ ...data, todos: [{ id: 't', text: '로컬', done: true }] }))
     await store.flush()
-    expect(store.getState().syncStatus).toBe('conflict')
-    expect(store.update((data) => data).ok).toBe(false)
-    store.applyRemote(sampleData())
+    expect(store.getState().syncStatus).toBe('error')
+    failing = false
+    await store.refresh()
+    await store.flush()
+    expect(store.getState().data.todos).toEqual([{ id: 't', text: '로컬', done: true }])
+    expect(store.getState().data.dayNotes).toEqual({ '2026-10-03': '원격' })
+    expect(JSON.parse(drive.content()!).todos).toHaveLength(1)
     expect(store.getState().syncStatus).toBe('saved')
-    expect(store.getState().data.entries).toHaveLength(2)
   })
 })

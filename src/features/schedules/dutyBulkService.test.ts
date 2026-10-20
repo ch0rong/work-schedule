@@ -55,14 +55,14 @@ describe('bulkAddWork', () => {
     expect(result.errors[0]).toContain('휴게시간')
   })
 
-  it('기본근무도 같은 방식으로 등록한다', () => {
+  it('정규 근무도 같은 방식으로 등록한다', () => {
     const result = bulkAddWork(sampleData({ entries: [] }), weekday(['2026-10-06', '2026-10-07'], { workTypeId: 'work', startTime: '09:00', endTime: '18:00' }), createId)
-    expect(result).toMatchObject({ typeName: '기본근무', added: ['2026-10-06', '2026-10-07'] })
-    expect(describeWorkBulkResult(result)).toBe('기본근무 2일을 등록했습니다.')
+    expect(result).toMatchObject({ typeName: '정규 근무', added: ['2026-10-06', '2026-10-07'] })
+    expect(describeWorkBulkResult(result)).toBe('정규 근무 2일을 등록했습니다.')
   })
 
   it('일괄 등록 대상이 아닌 유형(휴무·휴일근무 등)이나 빈 날짜는 오류', () => {
-    expect(bulkAddWork(sampleData(), weekday(['2026-10-05'], { workTypeId: 'off' }), createId).errors).toEqual(['근무 종류(기본근무·평일 당직·주말 당직)를 선택하세요.'])
+    expect(bulkAddWork(sampleData(), weekday(['2026-10-05'], { workTypeId: 'off' }), createId).errors).toEqual(['근무 종류(정규 근무·평일 당직·주말 당직)를 선택하세요.'])
     expect(bulkAddWork(sampleData(), weekday(['2026-10-05'], { workTypeId: 'holiday-work' }), createId).errors).toHaveLength(1)
     expect(bulkAddWork(sampleData(), weekday([]), createId).errors).toEqual(['등록할 날짜를 하나 이상 선택하세요.'])
   })

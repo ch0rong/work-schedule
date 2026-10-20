@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react'
-import { ChevronLeft, ChevronRight, Info } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Info, RotateCcw } from 'lucide-react'
 import { useNotify } from '../../app/noticeContext'
 import { useAppState, useAppStore } from '../../app/storeContext'
 import { useHolidays } from '../../app/useHolidays'
-import { estimateMonthlyPay, formatWon, PAY_DISCLAIMER, setPayrollRecord, type PayLine } from '../../features/pay/payService'
+import { clearPayrollRecord, estimateMonthlyPay, formatWon, PAY_DISCLAIMER, setPayrollRecord, type PayLine } from '../../features/pay/payService'
 import { addMonthsToMonthString, toDateString } from '../../lib/date'
 import { payrollRecordSchema, type PayrollRecord } from '../../lib/schema'
 import { formatMinutes } from '../../lib/time'
+import { Dialog } from '../common/Dialog'
 import { MoneyInput } from '../common/MoneyInput'
 
 const weekday = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' })
@@ -54,6 +55,7 @@ export function PayPage() {
         <button type="button" className="button icon-button" aria-label="다음 달" onClick={() => setMonth(addMonthsToMonthString(month, 1))} disabled={!valid}>
           <ChevronRight aria-hidden="true" size={18} />
         </button>
+        {valid && <PayResetButton month={month} hasRecord={month in data.payrollRecords} />}
       </div>
 
       {pay && (
@@ -131,7 +133,7 @@ export function PayPage() {
             </ul>
           </section>
 
-          <DepositForm key={month} month={month} record={pay.record} />
+          <DepositForm key={`${month}:${pay.record ? 'saved' : 'empty'}`} month={month} record={pay.record} />
 
           <section className="card" aria-labelledby="overtime-detail-title">
             <h3 id="overtime-detail-title" className="section-title">
@@ -234,6 +236,66 @@ export function PayPage() {
         </>
       )}
     </div>
+  )
+}
+
+/** 급여 초기화: 확인을 받은 뒤 해당 월의 저장된 급여 기록을 지운다 */
+function PayResetButton({ month, hasRecord }: { month: string; hasRecord: boolean }) {
+  const store = useAppStore()
+  const notify = useNotify()
+  const [open, setOpen] = useState(false)
+  const [error, setError] = useState('')
+  const label = `${month.slice(0, 4)}년 ${Number(month.slice(5))}월`
+
+  function handleReset() {
+    const result = store.update((data) => clearPayrollRecord(data, month))
+    if (!result.ok) {
+      setError(result.errors.join(' '))
+      return
+    }
+    setOpen(false)
+    notify(`${label} 급여 데이터를 초기화했습니다.`)
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="button button-danger pay-reset-button"
+        onClick={() => {
+          setError('')
+          setOpen(true)
+        }}
+        disabled={!hasRecord}
+        title={hasRecord ? undefined : '이 달에 저장된 급여 데이터가 없습니다.'}
+      >
+        <RotateCcw aria-hidden="true" size={16} />
+        급여 초기화
+      </button>
+      <Dialog
+        open={open}
+        title={`${label} 급여를 초기화할까요?`}
+        onClose={() => setOpen(false)}
+        actions={
+          <>
+            <button type="button" className="button" onClick={() => setOpen(false)}>
+              취소
+            </button>
+            <button type="button" className="button button-danger" onClick={handleReset}>
+              초기화
+            </button>
+          </>
+        }
+      >
+        <p>이 달에 저장한 실제 입금액과 메모가 완전히 삭제됩니다. 되돌릴 수 없습니다.</p>
+        <p className="muted small">근무 일정과 급여·공제 설정은 그대로 두며, 예상 급여는 일정과 설정으로 다시 계산됩니다.</p>
+        {error && (
+          <p className="field-error" role="alert">
+            {error}
+          </p>
+        )}
+      </Dialog>
+    </>
   )
 }
 

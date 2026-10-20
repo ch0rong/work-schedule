@@ -297,6 +297,9 @@ export const holidayOverrideSchema = z.object({ date: dateString, originalName: 
 /** 사용자가 직접 삭제(소멸 처리)한 대체휴무 발생 건. 발생 일정은 그대로 둔다 */
 export const compDismissalSchema = z.object({ entryId: id, date: dateString })
 
+/** 할 일 메모. 배열 순서가 화면 순서다 */
+export const todoSchema = z.object({ id, text: z.string().max(500, '할 일은 500자 이하로 입력하세요.'), done: z.boolean() })
+
 // ---------- 전체 문서 ----------
 export const appDataSchema = z
   .object({
@@ -310,6 +313,7 @@ export const appDataSchema = z
     /** 날짜별 메모 (일정과 별개) */
     dayNotes: z.record(dateString, z.string().max(500, '메모는 500자 이하로 입력하세요.')).default({}),
     compDismissals: z.array(compDismissalSchema).default([]),
+    todos: z.array(todoSchema).default([]),
     /** v1에서 대응 항목이 없던 설정 원본 */
     legacy: z.record(z.string(), z.unknown()).optional(),
     updatedAt: z.iso.datetime(),
@@ -331,6 +335,7 @@ export const appDataSchema = z
     unique(data.entries, 'entries', '일정')
     unique(data.mealUsages, 'mealUsages', '매식비 사용')
     unique(data.holidays.custom, 'holidays', '추가 휴일')
+    unique(data.todos, 'todos', '할 일')
     const overridden = new Set<string>()
     data.holidays.overrides.forEach((item, index) => {
       const key = `${item.date}|${item.originalName}`
@@ -448,6 +453,7 @@ export type PayrollRecord = z.infer<typeof payrollRecordSchema>
 export type CustomHoliday = z.infer<typeof customHolidaySchema>
 export type HolidayOverride = z.infer<typeof holidayOverrideSchema>
 export type CompDismissal = z.infer<typeof compDismissalSchema>
+export type Todo = z.infer<typeof todoSchema>
 export type HolidayCompensation = (typeof HOLIDAY_COMPENSATIONS)[number]
 export type AppData = z.infer<typeof appDataSchema>
 

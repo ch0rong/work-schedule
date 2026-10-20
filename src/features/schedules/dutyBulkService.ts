@@ -3,7 +3,7 @@ import { entrySchema, formatSchemaIssues, type AppData, type WorkCategory, type 
 import { getOvertimeLimitErrors } from '../overtime/overtimeService'
 import { upsertEntry } from './scheduleService'
 
-/** 일괄 등록할 수 있는 근무 종류: 기본근무, 평일 당직, 주말 당직 */
+/** 일괄 등록할 수 있는 근무 종류: 정규 근무, 평일 당직, 주말 당직 */
 export const BULK_WORK_CATEGORIES: readonly WorkCategory[] = ['regular', 'weekday-duty', 'weekend-duty']
 
 /** 근무·당직 일괄 등록 입력. 시간은 선택한 모든 날짜에 똑같이 적용한다 */
@@ -36,7 +36,7 @@ export function hasWorkOn(data: AppData, date: string): boolean {
 }
 
 /**
- * 기본근무·당직 일괄 등록 (서버 없이 문서 하나를 갱신한다).
+ * 정규 근무·당직 일괄 등록 (서버 없이 문서 하나를 갱신한다).
  * 날짜순으로 하나씩 단건 등록과 같은 규칙을 적용한다:
  * 1) 이미 근무가 있는 날은 건너뛴다  2) 일정 스키마 검증  3) 앞서 등록한 날까지 포함해 월·주 연장 한도 검사(넘으면 그 날만 차단)
  * 4) upsertEntry로 추가 → 대체휴무 기한 기록 등 단건 저장과 같은 처리
@@ -45,7 +45,7 @@ export function bulkAddWork(data: AppData, input: WorkBulkInput, createId: () =>
   const type = data.workTypes.find((item) => item.id === input.workTypeId)
   const result: WorkBulkResult = { data, typeName: type?.name ?? '', added: [], skippedExisting: [], blockedByLimit: [], errors: [] }
   if (!type || !BULK_WORK_CATEGORIES.includes(type.category)) {
-    return { ...result, errors: ['근무 종류(기본근무·평일 당직·주말 당직)를 선택하세요.'] }
+    return { ...result, errors: ['근무 종류(정규 근무·평일 당직·주말 당직)를 선택하세요.'] }
   }
   const dates = [...new Set(input.dates)].filter(isValidDateString).sort()
   if (dates.length === 0) return { ...result, errors: ['등록할 날짜를 하나 이상 선택하세요.'] }

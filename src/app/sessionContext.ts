@@ -8,10 +8,6 @@ export interface Session {
   logout(reason?: string): Promise<void>
   /** 같은 계정으로 다시 로그인 (사용자 클릭에서 호출) */
   reauth(): Promise<void>
-  /** Drive에서 다시 불러오기 (충돌 해결: 다른 기기 데이터 사용) */
-  reload(): Promise<void>
-  /** 충돌 해결: 내 데이터로 덮어쓰기 */
-  forceSave(): Promise<void>
 }
 
 export const SessionContext = createContext<Session | null>(null)
