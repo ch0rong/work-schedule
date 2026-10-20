@@ -36,7 +36,7 @@ npm run preview   # 빌드 결과 미리보기
 | 이름 | 내용 |
 |---|---|
 | `VITE_GOOGLE_CLIENT_ID` | Google OAuth 클라이언트 ID (공개 값) |
-| `VITE_ALLOWED_EMAIL_SHA256` | 허용 이메일(소문자)의 SHA-256 해시 |
+| `VITE_ALLOWED_EMAIL_SHA256` | 허용 이메일(소문자)의 SHA-256 해시. 여러 명이면 쉼표로 구분 |
 
 ## Google 로그인 설정 (본인이 직접 하는 작업, 무료)
 로그인 정보(클라이언트 ID)가 없으면 개발 서버에서는 **로컬 모드**(로그인 없음, 이 브라우저에만 저장)로, 배포 빌드에서는 **접근 차단 화면**으로 동작합니다.
@@ -71,6 +71,16 @@ npm run preview   # 빌드 결과 미리보기
 3. 저장소 **Settings → Secrets and variables → Actions → Variables**에 `VITE_GOOGLE_CLIENT_ID`, `VITE_ALLOWED_EMAIL_SHA256` 추가 후 Actions에서 다시 실행
 4. Google Cloud OAuth 클라이언트의 **승인된 JavaScript 원본**에 `https://ch0rong.github.io` 추가 (경로 없이)
 5. 주소: https://ch0rong.github.io/work-schedule/
+
+## 다른 사람 추가하기 (100명까지)
+각 사용자의 데이터는 **본인 Google Drive의 앱 전용 폴더**에 따로 저장되어 서로 보이지 않습니다. 두 곳에 모두 등록해야 들어올 수 있습니다.
+
+1. **Google Cloud Console → Google Auth Platform → 대상(Audience) → 테스트 사용자 → 사용자 추가**에 그 사람의 Gmail 입력 (본인을 등록할 때와 같음, 최대 100명)
+2. 앱 허용 목록에 추가 (해시만 저장되고 이메일 원문은 남지 않음, 자동으로 다시 배포):
+   ```bash
+   node scripts/allowed-emails.mjs add 친구@gmail.com
+   ```
+   해제는 `remove`, 확인은 `check 이메일`, 인원 수는 `count`.
 
 보안 정책(CSP)은 GitHub Pages가 헤더를 지원하지 않아 배포 빌드의 index.html에 meta 태그로 들어갑니다(`vite.config.ts`).
 설정값(클라이언트 ID·허용 이메일 해시)이 없으면 배포 사이트는 접근 차단 화면만 보여줍니다.

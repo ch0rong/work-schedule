@@ -16,6 +16,14 @@ describe('허용 이메일 확인', () => {
     expect(await isAllowedEmail('other@example.com', hash)).toBe(false)
   })
 
+  it('허용 해시를 쉼표·줄바꿈으로 여러 개 적을 수 있다', async () => {
+    const list = `${await sha256Hex('me@example.com')}, ${await sha256Hex('friend@example.com')}
+`
+    expect(await isAllowedEmail('me@example.com', list)).toBe(true)
+    expect(await isAllowedEmail('Friend@Example.com', list)).toBe(true)
+    expect(await isAllowedEmail('other@example.com', list)).toBe(false)
+  })
+
   it('허용 해시가 비었거나 형식이 틀리면 아무도 허용하지 않는다', async () => {
     expect(await isAllowedEmail('me@example.com', '')).toBe(false)
     expect(await isAllowedEmail('me@example.com', 'not-a-hash')).toBe(false)

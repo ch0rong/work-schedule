@@ -32,11 +32,19 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }
 
-/** 허용 이메일(해시)과 같은지. 해시가 비어 있으면 아무도 허용하지 않는다(설정 누락 시 차단). */
+/** 허용 이메일 해시 목록. 쉼표·공백·줄바꿈으로 여러 개를 적을 수 있다. 형식이 틀린 값은 버린다 */
+export function parseAllowedHashes(allowedSha256: string): string[] {
+  return allowedSha256
+    .split(/[\s,]+/)
+    .map((hash) => hash.trim().toLowerCase())
+    .filter((hash) => /^[0-9a-f]{64}$/.test(hash))
+}
+
+/** 허용 이메일(해시) 중 하나와 같은지. 목록이 비어 있으면 아무도 허용하지 않는다(설정 누락 시 차단). */
 export async function isAllowedEmail(email: string, allowedSha256: string): Promise<boolean> {
-  const expected = allowedSha256.trim().toLowerCase()
-  if (!/^[0-9a-f]{64}$/.test(expected)) return false
-  return (await sha256Hex(normalizeEmail(email))) === expected
+  const allowed = parseAllowedHashes(allowedSha256)
+  if (allowed.length === 0) return false
+  return allowed.includes(await sha256Hex(normalizeEmail(email)))
 }
 
 /** 토큰으로 로그인한 계정의 이메일을 확인한다. */
