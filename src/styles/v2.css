@@ -250,6 +250,16 @@
   font-size: 0.8125rem;
 }
 
+/* 월간 보기: 정규 근무는 날짜 옆 점으로만 */
+.day-regular-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  align-self: center;
+}
+
 .day-holiday {
   overflow: hidden;
   max-width: 100%;

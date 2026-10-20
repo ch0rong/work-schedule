@@ -195,10 +195,18 @@ describe('달력', () => {
     ]
     setup(sampleData({ entries }))
     const cell = dateCell('2026-10-15')
-    expect(within(cell).getByText('정규 근무')).toBeInTheDocument()
+    expect(within(cell).getByTitle('정규 근무')).toHaveClass('day-regular-dot') // 정규 근무는 날짜 옆 점
     expect(within(cell).getByText('유연근무 +1:00')).toBeInTheDocument()
     expect(within(cell).getByText('외출')).toBeInTheDocument()
     expect(within(cell).queryByText(/^\+\d+/)).not.toBeInTheDocument() // "+1개" 더보기 링크 없음
+  })
+
+  it('월간 보기: 정규 근무는 날짜 옆 점, 연장이 있으면 "연장 +1:30"만 아래에 적는다', () => {
+    setup(sampleData({ entries: [workEntry({ id: 'a', date: '2026-10-14', endDate: '2026-10-14' }), overtimeEntry('b', '2026-10-15', '18:00', '19:30')] }))
+    expect(within(dateCell('2026-10-14')).getByTitle('정규 근무')).toBeInTheDocument()
+    expect(within(dateCell('2026-10-14')).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(dateCell('2026-10-15')).getByTitle('정규 근무')).toBeInTheDocument()
+    expect(within(dateCell('2026-10-15')).getByText('연장 +1:30')).toBeInTheDocument()
   })
 
   it('날짜 메모를 저장하면 달력 칸에 표시되고, 비우면 지운다', async () => {

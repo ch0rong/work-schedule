@@ -13,7 +13,7 @@ import { format } from 'date-fns'
 import { toDateString } from '../../lib/date'
 import type { Holiday } from '../../lib/holidays'
 import type { AppData, Settings } from '../../lib/schema'
-import { toCalendarEvents } from './calendarEvents'
+import { regularWorkDots, toCalendarEvents } from './calendarEvents'
 
 export type CalendarViewType = Settings['defaultView']
 
@@ -43,7 +43,8 @@ export function ScheduleCalendar({ data, selectedDate, holidays, mealDates, dayN
   const ref = useRef<CalendarRef>(null)
   const [title, setTitle] = useState('')
   const [viewType, setViewType] = useState<CalendarViewType>(data.settings.defaultView)
-  const events = useMemo(() => toCalendarEvents(data), [data])
+  const events = useMemo(() => toCalendarEvents(data, { compactRegular: viewType === 'dayGridMonth' }), [data, viewType])
+  const regularDots = useMemo(() => regularWorkDots(data), [data])
   const api = () => ref.current?.getApi()
 
   /** 토요일·일요일 (월간 보기 요일 머리글은 요일만 본다) */
@@ -138,6 +139,11 @@ export function ScheduleCalendar({ data, selectedDate, holidays, mealDates, dayN
             return (
               <span className="day-top">
                 <span className="day-number">{info.dayNumberText.replace('일', '')}</span>
+                {regularDots.has(date) && (
+                  <span className="day-regular-dot" style={{ background: regularDots.get(date) }} title="정규 근무">
+                    <span className="visually-hidden">정규 근무</span>
+                  </span>
+                )}
                 {names.length > 0 && <span className="day-holiday">{names.join(', ')}</span>}
                 {mealDates.has(date) && <span className="day-meal">매식비</span>}
                 {dayNotes[date] && (
