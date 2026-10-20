@@ -686,3 +686,27 @@ describe('급여 초기화', () => {
     expect(screen.getByRole('button', { name: '급여 초기화' })).toBeDisabled()
   })
 })
+
+describe('기간별 정리', () => {
+  it('연도 범위를 골라 건수를 확인하고 정리한다 (설정은 남김)', async () => {
+    const { storage, user } = setup(
+      sampleData({
+        entries: [workEntry({ id: 'old', date: '2024-03-04', endDate: '2024-03-04' }), workEntry({ id: 'new', date: '2026-10-19', endDate: '2026-10-19' })],
+        todos: [{ id: 't', text: '옛 할 일', done: false, date: '2024-05-01', doneOn: null }],
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: '마이페이지' }))
+    await user.click(screen.getByRole('tab', { name: '백업·정리' }))
+    await user.selectOptions(screen.getByLabelText('시작 연도'), '2024')
+    await user.selectOptions(screen.getByLabelText('끝 연도'), '2025')
+    expect(screen.getByText('2024~2025년: 일정 1건 · 할 일 1건')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '정리하기' }))
+    const dialog = screen.getByRole('dialog', { name: '2024~2025년 기록을 정리할까요?' })
+    expect(within(dialog).getByText(/완료하지 않은 할 일 1건도 지워집니다/)).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: '백업 없이 정리' }))
+    const saved = JSON.parse(storage.items.get(STORAGE_KEY)!) as AppData
+    expect(saved.entries.map((entry) => entry.id)).toEqual(['new'])
+    expect(saved.todos).toEqual([])
+    expect(saved.settings.leave.grants).toEqual(sampleData().settings.leave.grants)
+  })
+})

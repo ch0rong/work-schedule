@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { CalendarPreferences } from '../settings/CalendarPreferences'
 import { DataManagement } from '../settings/DataManagement'
+import { YearCleanup } from '../settings/YearCleanup'
 import { WorkTypeManager } from '../settings/WorkTypeManager'
 import { PaySettings, TaxSettings } from './PaySettings'
 import {
@@ -31,7 +32,16 @@ const TABS = [
   { id: 'work-types', label: '근무 유형', render: () => <WorkTypeManager /> },
   { id: 'calendar', label: '달력', render: () => <CalendarPreferences /> },
   { id: 'session', label: '로그인 세션', render: () => <SessionSettings /> },
-  { id: 'data-management', label: '백업', render: () => <DataManagement /> },
+  {
+    id: 'data-management',
+    label: '백업·정리',
+    render: () => (
+      <>
+        <DataManagement />
+        <YearCleanup />
+      </>
+    ),
+  },
 ] as const satisfies readonly { id: string; label: string; render: () => ReactNode }[]
 
 export type MyPageTab = (typeof TABS)[number]['id']

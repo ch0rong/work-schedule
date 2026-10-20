@@ -19,8 +19,8 @@ function backupFile(content: string, name = 'backup.json') {
   return new File([content], name, { type: 'application/json' })
 }
 
-/** 마이페이지를 열고 탭을 고른다 (백업·복원 테스트는 '백업' 탭) */
-async function openSettings(user: ReturnType<typeof userEvent.setup>, tab = '백업') {
+/** 마이페이지를 열고 탭을 고른다 (백업·복원 테스트는 '백업·정리' 탭) */
+async function openSettings(user: ReturnType<typeof userEvent.setup>, tab = '백업·정리') {
   await user.click(screen.getByRole('button', { name: '마이페이지' }))
   await user.click(screen.getByRole('tab', { name: tab }))
 }
