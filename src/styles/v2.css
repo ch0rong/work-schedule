@@ -718,7 +718,7 @@
 
 .todo-item {
   display: grid;
-  grid-template-columns: 20px 18px minmax(0, 1fr);
+  grid-template-columns: 20px 18px minmax(0, 1fr) 24px;
   align-items: start;
   gap: var(--space-1) var(--space-2);
   padding: 2px 0;
@@ -755,18 +755,53 @@
   touch-action: none;
 }
 
+.todo-delete {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.todo-delete:hover {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
 .todo-item:hover .todo-handle,
 .todo-item:focus-within .todo-handle,
 .todo-item.is-dragging .todo-handle,
-.todo-handle:focus-visible {
+.todo-handle:focus-visible,
+.todo-item:hover .todo-delete,
+.todo-item:focus-within .todo-delete,
+.todo-delete:focus-visible {
   opacity: 1;
 }
 
-/* 터치 화면은 마우스 올림이 없으므로 손잡이를 항상 보인다 */
+/* 터치 화면은 마우스 올림이 없으므로 손잡이·삭제 버튼을 항상 보인다 */
 @media (hover: none) {
-  .todo-handle {
+  .todo-handle,
+  .todo-delete {
     opacity: 0.6;
   }
+}
+
+.todo-body {
+  display: grid;
+  min-width: 0;
+}
+
+/* 이전 날짜에서 넘어온 미완료 할 일 */
+.todo-since {
+  padding: 0 4px 2px;
+  color: var(--color-warning);
+  font-size: 0.75rem;
 }
 
 .todo-check {

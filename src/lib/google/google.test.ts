@@ -161,12 +161,12 @@ describe('비동기 저장 store', () => {
     const storeB = createStore(await repoB.load(), (data) => repoB.save(data), undefined, () => repoB.pull())
 
     // 두 기기가 서로 다른 곳을 고친다
-    storeA.update((data) => ({ ...data, todos: [{ id: 'a', text: '집에서 추가', done: false }] }))
+    storeA.update((data) => ({ ...data, todos: [{ id: 'a', text: '집에서 추가', done: false, date: '2026-10-20', doneOn: null }] }))
     await storeA.flush()
     storeB.update((data) => ({ ...data, dayNotes: { ...data.dayNotes, '2026-10-02': '회사에서 추가' } }))
     await storeB.flush()
     expect(storeB.getState().syncStatus).toBe('saved')
-    expect(storeB.getState().data.todos).toEqual([{ id: 'a', text: '집에서 추가', done: false }])
+    expect(storeB.getState().data.todos).toEqual([{ id: 'a', text: '집에서 추가', done: false, date: '2026-10-20', doneOn: null }])
 
     // A는 주기 확인(refresh)으로 B의 변경을 받는다
     await storeA.refresh()
@@ -182,13 +182,13 @@ describe('비동기 저장 store', () => {
     let failing = true
     const store = createStore(await repo.load(), async (data) => (failing ? { ok: false as const, message: '네트워크' } : repo.save(data)), undefined, () => repo.pull())
     await drive.client.create(JSON.stringify(sampleData({ dayNotes: { '2026-10-03': '원격' } })))
-    store.update((data) => ({ ...data, todos: [{ id: 't', text: '로컬', done: true }] }))
+    store.update((data) => ({ ...data, todos: [{ id: 't', text: '로컬', done: true, date: '2026-10-20', doneOn: '2026-10-20' }] }))
     await store.flush()
     expect(store.getState().syncStatus).toBe('error')
     failing = false
     await store.refresh()
     await store.flush()
-    expect(store.getState().data.todos).toEqual([{ id: 't', text: '로컬', done: true }])
+    expect(store.getState().data.todos).toEqual([{ id: 't', text: '로컬', done: true, date: '2026-10-20', doneOn: '2026-10-20' }])
     expect(store.getState().data.dayNotes).toEqual({ '2026-10-03': '원격' })
     expect(JSON.parse(drive.content()!).todos).toHaveLength(1)
     expect(store.getState().syncStatus).toBe('saved')

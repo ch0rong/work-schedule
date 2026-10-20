@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { addDaysToDateString, isValidDateString, isValidTimeString, timeToMinutes } from './date'
+import { addDaysToDateString, isValidDateString, isValidTimeString, timeToMinutes, toDateString } from './date'
 import { calculateElapsedMinutes, MINUTES_PER_DAY } from './time'
 
 /** 데이터 구조 설명은 DATABASE.md 참고 */
@@ -297,8 +297,19 @@ export const holidayOverrideSchema = z.object({ date: dateString, originalName: 
 /** 사용자가 직접 삭제(소멸 처리)한 대체휴무 발생 건. 발생 일정은 그대로 둔다 */
 export const compDismissalSchema = z.object({ entryId: id, date: dateString })
 
-/** 할 일 메모. 배열 순서가 화면 순서다 */
-export const todoSchema = z.object({ id, text: z.string().max(500, '할 일은 500자 이하로 입력하세요.'), done: z.boolean() })
+/**
+ * 날짜별 할 일. 배열 순서가 화면 순서다.
+ * 완료하지 않은 할 일은 완료할 때까지 이후 날짜에도 보인다. 날짜가 없던 이전 데이터는 처음 읽은 날짜로 둔다.
+ */
+export const todoSchema = z.object({
+  id,
+  text: z.string().max(500, '할 일은 500자 이하로 입력하세요.'),
+  done: z.boolean(),
+  /** 할 일을 적은 날짜 */
+  date: dateString.default(() => toDateString(new Date())),
+  /** 완료 체크한 날짜. 이 날까지 목록에 보인다 */
+  doneOn: dateString.nullable().default(null),
+})
 
 // ---------- 전체 문서 ----------
 export const appDataSchema = z

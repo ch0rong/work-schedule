@@ -79,7 +79,7 @@ export function CalendarPage() {
         </div>
 
         <div className="calendar-todo">
-          <TodoList />
+          <TodoList date={selectedDate} />
         </div>
       </div>
 

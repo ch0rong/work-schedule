@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { leaveEntry, sampleData, workEntry } from '../test/fixtures'
 import { merge3, mergeAppData } from './merge'
 
-const todo = (id: string, text = id, done = false) => ({ id, text, done })
+const todo = (id: string, text = id, done = false) => ({ id, text, done, date: '2026-10-20', doneOn: null })
 
 describe('3-way 병합', () => {
   it('한쪽만 바꾼 값은 바꾼 쪽, 양쪽이 같은 값을 다르게 바꾸면 이 기기(local)', () => {

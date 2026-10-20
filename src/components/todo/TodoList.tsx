@@ -1,11 +1,14 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { GripVertical, Plus } from 'lucide-react'
+import { GripVertical, Plus, X } from 'lucide-react'
 import { useAppState, useAppStore } from '../../app/storeContext'
 import { createId } from '../../features/schedules/scheduleService'
-import { insertTodo, moveTodo, removeTodo, splitTodo, updateTodo, withTodos } from '../../features/todo/todoService'
+import { insertTodoAfter, moveTodo, moveTodoInView, removeTodo, setTodoDone, splitTodo, todosOnDate, updateTodo, withTodos } from '../../features/todo/todoService'
+import { parseDateString } from '../../lib/date'
 import type { Todo } from '../../lib/schema'
 
 const MAX_LENGTH = 500
+const dateLabel = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })
+const shortDate = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8))}`
 
 /** 드래그 중인 항목: 시작 위치, 현재 놓일 위치, 시작할 때 각 행의 세로 중앙(페이지 기준) */
 interface DragState {
@@ -16,20 +19,22 @@ interface DragState {
 }
 
 /**
- * 노션 스타일 할 일 목록.
+ * 노션 스타일 날짜별 할 일 목록. 선택한 날짜에 적고, 완료하지 않은 할 일은 완료할 때까지 이후 날짜에도 보인다.
  * - 글자를 누르면 바로 고친다 (수정 버튼 없음). 고칠 때마다 저장·동기화된다.
- * - Enter: 다음 할 일 추가(커서 위치에서 나눔), 빈 칸에서 Backspace: 지우고 위 항목으로, 맨 앞에서 Backspace: 위 항목과 합침
+ * - Enter: 다음 할 일 추가(커서 위치에서 나눔), 빈 칸에서 Backspace 또는 ×: 삭제, 맨 앞에서 Backspace: 위 항목과 합침
  * - ↑/↓: 위아래 항목으로 이동, Alt+↑/↓ 또는 손잡이 드래그: 순서 변경
  */
-export function TodoList() {
+export function TodoList({ date }: { date: string }) {
   const store = useAppStore()
   const { data } = useAppState()
-  const todos = data.todos
+  const items = todosOnDate(data.todos, date)
+  const visible = items.map((item) => item.todo)
   const inputs = useRef(new Map<string, HTMLTextAreaElement>())
   const rows = useRef(new Map<string, HTMLLIElement>())
   const [focus, setFocus] = useState<{ id: string; caret: number } | null>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
   const [error, setError] = useState('')
+  const parsed = parseDateString(date)
 
   // 추가·삭제·합치기 뒤 원하는 항목의 원하는 위치로 커서를 옮긴다
   useLayoutEffect(() => {
@@ -40,7 +45,7 @@ export function TodoList() {
     const caret = Math.min(focus.caret, input.value.length)
     input.setSelectionRange(caret, caret)
     setFocus(null)
-  }, [focus, todos])
+  }, [focus, data.todos])
 
   function save(change: (todos: Todo[]) => Todo[]): boolean {
     const result = store.update((current) => withTodos(current, change(current.todos)))
@@ -48,9 +53,22 @@ export function TodoList() {
     return result.ok
   }
 
-  function addAt(index: number) {
+  /** 보이는 목록에서 순서 변경 (다른 날짜에만 보이는 항목 위치는 그대로) */
+  const moveVisible = (from: number, to: number) =>
+    save((list) => {
+      const ids = todosOnDate(list, date).map((item) => item.todo.id)
+      return moveTodoInView(list, ids, from, to)
+    })
+
+  function addLast() {
     const id = createId()
-    if (save((list) => insertTodo(list, index, { id, text: '', done: false }))) setFocus({ id, caret: 0 })
+    const last = visible.at(-1)?.id ?? null
+    if (save((list) => insertTodoAfter(list, last, { id, text: '', done: false, date, doneOn: null }))) setFocus({ id, caret: 0 })
+  }
+
+  function remove(todo: Todo, index: number) {
+    const target = visible[index - 1] ?? visible[index + 1]
+    if (save((list) => removeTodo(list, todo.id)) && target) setFocus({ id: target.id, caret: visible[index - 1] ? target.text.length : 0 })
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>, todo: Todo, index: number) {
@@ -63,15 +81,14 @@ export function TodoList() {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
       const id = createId()
-      if (save((list) => splitTodo(list, todo.id, input.selectionStart, id))) setFocus({ id, caret: 0 })
+      if (save((list) => splitTodo(list, todo.id, input.selectionStart, id, date))) setFocus({ id, caret: 0 })
       return
     }
     if (event.key === 'Backspace' && caretAtStart) {
-      const previous = todos[index - 1]
+      const previous = visible[index - 1]
       if (todo.text === '') {
         event.preventDefault()
-        const target = previous ?? todos[index + 1]
-        if (save((list) => removeTodo(list, todo.id)) && target) setFocus({ id: target.id, caret: previous ? previous.text.length : 0 })
+        remove(todo, index)
         return
       }
       if (previous) {
@@ -84,11 +101,11 @@ export function TodoList() {
     }
     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       const step = event.key === 'ArrowUp' ? -1 : 1
-      const target = todos[index + step]
+      const target = visible[index + step]
       if (!target) return
       if (event.altKey) {
         event.preventDefault()
-        if (save((list) => moveTodo(list, index, index + step))) setFocus({ id: todo.id, caret: input.selectionStart })
+        if (moveVisible(index, index + step)) setFocus({ id: todo.id, caret: input.selectionStart })
         return
       }
       // 여러 줄로 감긴 글은 첫 줄·마지막 줄에서만 다른 항목으로 넘어간다
@@ -104,7 +121,7 @@ export function TodoList() {
     if (event.button !== 0) return
     event.preventDefault()
     event.currentTarget.setPointerCapture(event.pointerId)
-    const mids = todos.map((item) => {
+    const mids = visible.map((item) => {
       const rect = rows.current.get(item.id)?.getBoundingClientRect()
       return rect ? rect.top + rect.height / 2 + window.scrollY : 0
     })
@@ -124,30 +141,34 @@ export function TodoList() {
     setDrag(null)
     if (cancel) return
     // 드래그 중 다른 기기 변경으로 목록이 바뀌었을 수 있어 id로 다시 찾는다
-    save((list) => moveTodo(list, list.findIndex((item) => item.id === id), over))
+    save((list) => {
+      const ids = todosOnDate(list, date).map((item) => item.todo.id)
+      return moveTodoInView(list, ids, ids.indexOf(id), over)
+    })
   }
 
-  const shown = drag ? moveTodo(todos, drag.from, drag.over) : todos
-  const doneCount = todos.filter((todo) => todo.done).length
+  const shown = drag ? moveTodo(items, drag.from, drag.over) : items
+  const doneCount = items.filter((item) => item.done).length
 
   return (
-    <section className="card todo-card" aria-labelledby="todo-title">
+    <section className="card todo-card" aria-label="할 일">
       <div className="card-header">
-        <h3 id="todo-title" className="section-title">
-          할 일
+        <h3 className="section-title">
+          할 일 <span className="muted small">{parsed ? dateLabel.format(parsed) : date}</span>
         </h3>
-        {todos.length > 0 && (
+        {items.length > 0 && (
           <span className="muted small" aria-live="polite">
-            {doneCount}/{todos.length} 완료
+            {doneCount}/{items.length} 완료
           </span>
         )}
       </div>
 
-      {todos.length === 0 && <p className="muted small">아래 버튼이나 Enter로 할 일을 추가하세요.</p>}
+      {items.length === 0 && <p className="muted small">이 날짜의 할 일이 없습니다. 완료하지 않은 할 일은 다음 날짜에도 이어서 보입니다.</p>}
 
       <ul className={`todo-list${drag ? ' is-sorting' : ''}`} aria-label="할 일 목록">
-        {shown.map((todo) => {
-          const index = todos.indexOf(todo)
+        {shown.map(({ todo, carried, done }) => {
+          const index = visible.indexOf(todo)
+          const name = `"${todo.text || '빈 할 일'}"`
           return (
             <li
               key={todo.id}
@@ -155,12 +176,12 @@ export function TodoList() {
                 if (element) rows.current.set(todo.id, element)
                 else rows.current.delete(todo.id)
               }}
-              className={`todo-item${todo.done ? ' is-done' : ''}${drag?.id === todo.id ? ' is-dragging' : ''}`}
+              className={`todo-item${done ? ' is-done' : ''}${drag?.id === todo.id ? ' is-dragging' : ''}`}
             >
               <button
                 type="button"
                 className="todo-handle"
-                aria-label={`"${todo.text || '빈 할 일'}" 순서 변경 (끌어서 옮기거나 Alt+↑/↓)`}
+                aria-label={`${name} 순서 변경 (끌어서 옮기거나 Alt+↑/↓)`}
                 onPointerDown={(event) => startDrag(event, todo, index)}
                 onPointerMove={moveDrag}
                 onPointerUp={() => endDrag()}
@@ -168,7 +189,7 @@ export function TodoList() {
                 onKeyDown={(event) => {
                   if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
                   event.preventDefault()
-                  save((list) => moveTodo(list, index, index + (event.key === 'ArrowUp' ? -1 : 1)))
+                  moveVisible(index, index + (event.key === 'ArrowUp' ? -1 : 1))
                 }}
               >
                 <GripVertical aria-hidden="true" size={16} />
@@ -176,30 +197,40 @@ export function TodoList() {
               <input
                 type="checkbox"
                 className="todo-check"
-                checked={todo.done}
-                aria-label={`"${todo.text || '빈 할 일'}" 완료`}
-                onChange={(event) => save((list) => updateTodo(list, todo.id, { done: event.target.checked }))}
+                checked={done}
+                aria-label={`${name} 완료`}
+                onChange={(event) => save((list) => setTodoDone(list, todo.id, event.target.checked, date))}
               />
-              <textarea
-                ref={(element) => {
-                  if (element) inputs.current.set(todo.id, element)
-                  else inputs.current.delete(todo.id)
-                }}
-                className="todo-text"
-                rows={1}
-                value={todo.text}
-                maxLength={MAX_LENGTH}
-                placeholder="할 일"
-                aria-label="할 일 내용"
-                onChange={(event) => save((list) => updateTodo(list, todo.id, { text: event.target.value.replace(/\r?\n/g, ' ') }))}
-                onKeyDown={(event) => handleKeyDown(event, todo, index)}
-              />
+              <div className="todo-body">
+                <textarea
+                  ref={(element) => {
+                    if (element) inputs.current.set(todo.id, element)
+                    else inputs.current.delete(todo.id)
+                  }}
+                  className="todo-text"
+                  rows={1}
+                  value={todo.text}
+                  maxLength={MAX_LENGTH}
+                  placeholder="할 일"
+                  aria-label="할 일 내용"
+                  onChange={(event) => save((list) => updateTodo(list, todo.id, { text: event.target.value.replace(/\r?\n/g, ' ') }))}
+                  onKeyDown={(event) => handleKeyDown(event, todo, index)}
+                />
+                {carried && (
+                  <span className="todo-since" title={`${todo.date}에 적은 할 일`}>
+                    {shortDate(todo.date)}부터
+                  </span>
+                )}
+              </div>
+              <button type="button" className="todo-delete" aria-label={`${name} 삭제`} title="삭제" onClick={() => remove(todo, index)}>
+                <X aria-hidden="true" size={16} />
+              </button>
             </li>
           )
         })}
       </ul>
 
-      <button type="button" className="todo-add" onClick={() => addAt(todos.length - 1)}>
+      <button type="button" className="todo-add" onClick={addLast}>
         <Plus aria-hidden="true" size={16} />
         할 일 추가
       </button>

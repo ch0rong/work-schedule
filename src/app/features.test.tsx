@@ -601,39 +601,67 @@ describe('할 일', () => {
   const saved = (storage: ReturnType<typeof memoryStorage>) => (JSON.parse(storage.items.get(STORAGE_KEY)!) as AppData).todos
   const todoRegion = () => screen.getByRole('region', { name: '할 일' })
   const texts = () => within(todoRegion()).queryAllByRole('textbox', { name: '할 일 내용' }) as HTMLTextAreaElement[]
+  const todo = (id: string, text: string, overrides: Partial<AppData['todos'][number]> = {}) => ({ id, text, done: false, date: '2026-10-19', doneOn: null, ...overrides })
+  const pickDate = (value: string) => fireEvent.change(screen.getByLabelText('날짜 선택'), { target: { value } })
 
-  it('Enter로 다음 할 일을 추가하고, 빈 칸에서 Backspace로 지운다', async () => {
+  it('Enter로 다음 할 일을 추가하고(선택한 날짜로 저장), 빈 칸에서 Backspace로 지운다', async () => {
     const { storage, user } = setup(sampleData())
     await user.click(within(todoRegion()).getByRole('button', { name: '할 일 추가' }))
     await user.keyboard('보고서 제출{Enter}회의 준비')
-    expect(saved(storage).map((todo) => todo.text)).toEqual(['보고서 제출', '회의 준비'])
+    expect(saved(storage).map((item) => [item.text, item.date])).toEqual([
+      ['보고서 제출', '2026-10-19'],
+      ['회의 준비', '2026-10-19'],
+    ])
     expect(texts()[1]).toHaveFocus()
 
     await user.keyboard('{Enter}')
     expect(texts()).toHaveLength(3)
     await user.keyboard('{Backspace}')
-    expect(saved(storage).map((todo) => todo.text)).toEqual(['보고서 제출', '회의 준비'])
+    expect(saved(storage).map((item) => item.text)).toEqual(['보고서 제출', '회의 준비'])
     expect(texts()[1]).toHaveFocus()
   })
 
+  it('× 버튼으로 삭제한다', async () => {
+    const { storage, user } = setup(sampleData({ todos: [todo('a', '장보기'), todo('b', '운동')] }))
+    await user.click(within(todoRegion()).getByRole('button', { name: '"장보기" 삭제' }))
+    expect(saved(storage).map((item) => item.id)).toEqual(['b'])
+  })
+
   it('글자를 눌러 바로 고치고, 체크하면 완료(취소선)로 표시한다', async () => {
-    const { storage, user } = setup(sampleData({ todos: [{ id: 'a', text: '장보기', done: false }] }))
+    const { storage, user } = setup(sampleData({ todos: [todo('a', '장보기')] }))
     await user.click(texts()[0])
     await user.keyboard('{End} 우유')
     expect(saved(storage)[0].text).toBe('장보기 우유')
     await user.click(within(todoRegion()).getByRole('checkbox', { name: '"장보기 우유" 완료' }))
-    expect(saved(storage)[0].done).toBe(true)
+    expect(saved(storage)[0]).toMatchObject({ done: true, doneOn: '2026-10-19' })
     expect(texts()[0].closest('li')).toHaveClass('is-done')
   })
 
-  it('손잡이에서 Alt 없이 ↑/↓, 글 칸에서 Alt+↑/↓로 순서를 바꾼다', async () => {
-    const { storage, user } = setup(sampleData({ todos: [{ id: 'a', text: 'A', done: false }, { id: 'b', text: 'B', done: false }] }))
+  it('완료하지 않은 할 일은 체크할 때까지 이후 날짜에도 보이고, 완료한 다음 날부터는 안 보인다', async () => {
+    const { user } = setup(sampleData({ todos: [todo('a', '서류 제출', { date: '2026-10-17' }), todo('b', '다음 주 일', { date: '2026-10-26' })] }))
+    expect(texts().map((input) => input.value)).toEqual(['서류 제출'])
+    expect(within(todoRegion()).getByText('10/17부터')).toBeInTheDocument()
+
+    pickDate('2026-10-16')
+    expect(texts()).toHaveLength(0)
+
+    pickDate('2026-10-21')
+    await user.click(within(todoRegion()).getByRole('checkbox', { name: '"서류 제출" 완료' }))
+    expect(texts()[0].closest('li')).toHaveClass('is-done')
+    pickDate('2026-10-22')
+    expect(texts()).toHaveLength(0)
+    pickDate('2026-10-20')
+    expect(texts()[0].closest('li')).not.toHaveClass('is-done')
+  })
+
+  it('손잡이에서 ↑/↓, 글 칸에서 Alt+↑/↓로 순서를 바꾼다', async () => {
+    const { storage, user } = setup(sampleData({ todos: [todo('a', 'A'), todo('b', 'B')] }))
     await user.click(texts()[1])
     await user.keyboard('{Alt>}{ArrowUp}{/Alt}')
-    expect(saved(storage).map((todo) => todo.id)).toEqual(['b', 'a'])
+    expect(saved(storage).map((item) => item.id)).toEqual(['b', 'a'])
     within(todoRegion()).getByRole('button', { name: /"B" 순서 변경/ }).focus()
     await user.keyboard('{ArrowDown}')
-    expect(saved(storage).map((todo) => todo.id)).toEqual(['a', 'b'])
+    expect(saved(storage).map((item) => item.id)).toEqual(['a', 'b'])
   })
 })
 
