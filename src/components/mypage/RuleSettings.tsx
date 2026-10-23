@@ -113,7 +113,7 @@ export function OvertimeSettings() {
                 step={0.5}
                 value={draft.overtime.capMinutes / 60}
                 onChange={(v) => overtime({ capMinutes: Math.round((v ?? Number.NaN) * 60) })}
-                hint="매월 1일 ~ 말일. 넘으면 저장할 수 없습니다"
+                hint="연장근무 산정 기간 기준. 넘으면 저장할 수 없습니다"
               />
               <NumberField
                 id="ot-weekly-cap"

@@ -9,14 +9,14 @@ import { monthlyTravel } from '../../features/travel/travelService'
 import { formatMinutes } from '../../lib/time'
 
 interface SummaryCardsProps {
-  /** 달력에서 보고 있는 월 `YYYY-MM` — 연장근무 한도는 이 월(1일~말일), 수당은 이 월 급여의 산정 기간 */
+  /** 달력에서 보고 있는 월 `YYYY-MM` — 연장근무 한도는 오늘(다른 월이면 이 월 급여)의 산정 기간, 수당은 이 월 급여의 산정 기간 */
   month: string
   today: string
   onOpenMeal: () => void
   onOpenTravel: () => void
 }
 
-/** 메인 달력 요약: 월(1일~말일) 연장근무 한도, 산정 기간(21일~20일) 연장·휴일수당, 매식비, 출장비, 잔여 연차·대체휴무 */
+/** 메인 달력 요약: 산정 기간(21일~20일) 연장근무 한도, 산정 기간(21일~20일) 연장·휴일수당, 매식비, 출장비, 잔여 연차·대체휴무 */
 export function SummaryCards({ month, today, onOpenMeal, onOpenTravel }: SummaryCardsProps) {
   const { data } = useAppState()
   const minutesPerDay = data.settings.leave.minutesPerDay
@@ -30,7 +30,7 @@ export function SummaryCards({ month, today, onOpenMeal, onOpenTravel }: Summary
   const monthLabel = `${Number(month.slice(5))}월`
   const slash = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`
   const periodLabel = `${slash(overtime.period.start)}~${slash(overtime.period.end)}`
-  const monthEnd = slash(limits.month.range.end)
+  const limitLabel = `${slash(limits.month.range.start)}~${slash(limits.month.range.end)}`
   // 정산 금액 = 연장근무 수당 + 휴일근무 수당 (모두 산정 기간 기준, 한도 적용 후)
   const settledAmount = overtime.overtimeAmount + overtime.holidayAllowance.amount
   const settledOvertimeMinutes = overtime.recognizedMinutes - overtime.holidayAllowance.minutes
@@ -39,7 +39,7 @@ export function SummaryCards({ month, today, onOpenMeal, onOpenTravel }: Summary
     <section aria-label="요약" className="summary-grid">
       <div className={`stat-card ${limits.month.exceededMinutes > 0 ? 'stat-warning' : ''}`}>
         <p className="stat-label">
-          {monthLabel} 연장근무 한도 ({Number(month.slice(5))}/1~{monthEnd})
+          연장근무 한도 ({limitLabel})
         </p>
         <p className="stat-value">
           {formatMinutes(limits.month.countedMinutes)} <span className="stat-unit">/ {formatMinutes(limits.month.capMinutes)}</span>

@@ -93,32 +93,38 @@ const september20h = ['01', '02', '03', '04', '08', '09', '10', '11', '15', '16'
 const holidayTrip = (id: string, date: string) =>
   workEntry({ id, workTypeId: 'holiday-work', date, endDate: date, holidayCompensation: 'trip-comp' })
 
-describe('한도 기간 — 월(1일~말일)·주(월~일)', () => {
-  it('주는 월요일 시작, 월은 달력 월', () => {
+describe('한도 기간 — 월(산정 기간 21일~20일)·주(월~일)', () => {
+  it('주는 월요일 시작, 월은 날짜가 속한 산정 기간', () => {
     expect(capWeek('2026-09-13')).toEqual({ start: '2026-09-07', end: '2026-09-13' }) // 일요일
     expect(capWeek('2026-09-14')).toEqual({ start: '2026-09-14', end: '2026-09-20' }) // 월요일
     expect(capWeek('2027-01-01')).toEqual({ start: '2026-12-28', end: '2027-01-03' }) // 연도 경계
-    expect(capMonth('2028-02-10')).toEqual({ start: '2028-02-01', end: '2028-02-29' }) // 윤년
+    expect(capMonth('2026-10-25', 21)).toEqual({ start: '2026-10-21', end: '2026-11-20' })
+    expect(capMonth('2026-10-21', 21)).toEqual({ start: '2026-10-21', end: '2026-11-20' }) // 시작일
+    expect(capMonth('2026-10-20', 21)).toEqual({ start: '2026-09-21', end: '2026-10-20' }) // 1~20일은 전월 21일부터
+    expect(capMonth('2026-12-25', 21)).toEqual({ start: '2026-12-21', end: '2027-01-20' }) // 연도 경계
+    expect(capMonth('2028-03-10', 21)).toEqual({ start: '2028-02-21', end: '2028-03-20' }) // 윤년 2월을 지난다
+    expect(capMonth('2028-02-10', 1)).toEqual({ start: '2028-02-01', end: '2028-02-29' }) // 시작일 1이면 달력 월
   })
 
-  it('월 한도는 1일~말일로 세고, 산정 기간(21일~20일)과 따로 계산한다', () => {
-    const data = sampleData({ entries: [...september20h, twoHours('o1', '2026-10-01')] })
-    expect(capUsage(data, '2026-09-30').month).toMatchObject({ countedMinutes: 20 * 60, remainingMinutes: 0 })
-    // 10/1은 같은 산정 기간(9/21~10/20)이지만 새 달
-    expect(capUsage(data, '2026-10-01').month).toMatchObject({ range: { start: '2026-10-01', end: '2026-10-31' }, countedMinutes: 120 })
+  it('월 한도는 산정 기간(21일~20일)으로 센다', () => {
+    const data = sampleData({ entries: [...september20h, twoHours('o1', '2026-09-21'), twoHours('o2', '2026-10-01')] })
+    expect(capUsage(data, '2026-09-20').month).toMatchObject({ range: { start: '2026-08-21', end: '2026-09-20' }, countedMinutes: 20 * 60, remainingMinutes: 0 })
+    // 9/21은 새 산정 기간(9/21~10/20), 10/1은 달이 바뀌어도 같은 산정 기간
+    expect(capUsage(data, '2026-09-21').month).toMatchObject({ range: { start: '2026-09-21', end: '2026-10-20' }, countedMinutes: 240, remainingMinutes: 16 * 60 })
+    expect(capUsage(data, '2026-10-01').month.countedMinutes).toBe(240)
     // 주 9/28~10/4에는 10/1분만
     expect(capUsage(data, '2026-09-30').week).toMatchObject({ range: { start: '2026-09-28', end: '2026-10-04' }, countedMinutes: 120 })
   })
 })
 
 describe('한도 초과 저장 차단', () => {
-  it('월 20시간을 넘기면 오류, 다음 달 1일은 같은 산정 기간이어도 저장 가능', () => {
+  it('월 20시간을 넘기면 오류, 다음 산정 기간(21일)부터는 저장 가능', () => {
     const data = sampleData({ entries: september20h })
-    const errors = getOvertimeLimitErrors(data, overtimeEntry('new', '2026-09-30', '18:00', '18:30'))
+    const errors = getOvertimeLimitErrors(data, overtimeEntry('new', '2026-09-18', '18:00', '18:30'))
     expect(errors).toHaveLength(1)
-    expect(errors[0]).toContain('월 한도(2026-09-01 ~ 2026-09-30)')
+    expect(errors[0]).toContain('월 한도(2026-08-21 ~ 2026-09-20)')
     expect(errors[0]).toContain('저장할 수 없습니다')
-    expect(getOvertimeLimitErrors(data, overtimeEntry('new', '2026-10-01', '18:00', '20:00'))).toEqual([])
+    expect(getOvertimeLimitErrors(data, overtimeEntry('new', '2026-09-21', '18:00', '20:00'))).toEqual([])
   })
 
   it('주 12시간을 넘기면 오류 (월 한도 안이어도)', () => {
@@ -153,8 +159,8 @@ describe('한도 초과 저장 차단', () => {
 
   it('자정을 넘는 연장도 근무일 기준으로 센다', () => {
     const data = sampleData({ entries: september20h.slice(0, 9) }) // 18h
-    const night = workEntry({ id: 'n', workTypeId: 'weekday-duty', date: '2026-09-30', endDate: '2026-09-30', startTime: '12:30', endTime: '21:30', overtime: [{ startTime: '21:30', endTime: '00:30', endsNextDay: true }] })
-    expect(getOvertimeLimitErrors(data, night)).toEqual([expect.stringContaining('월 한도(2026-09-01 ~ 2026-09-30)')])
+    const night = workEntry({ id: 'n', workTypeId: 'weekday-duty', date: '2026-09-18', endDate: '2026-09-18', startTime: '12:30', endTime: '21:30', overtime: [{ startTime: '21:30', endTime: '00:30', endsNextDay: true }] })
+    expect(getOvertimeLimitErrors(data, night)).toEqual([expect.stringContaining('월 한도(2026-08-21 ~ 2026-09-20)')])
   })
 })
 
@@ -208,12 +214,13 @@ describe('summarizeOvertime — 수당 정산(산정 기간)과 미인정', () =
     expect(summary.unrecognizedMinutes).toBe(180)
   })
 
-  it('산정 기간이 두 달에 걸쳐도 달마다 한도를 따로 적용한다', () => {
-    // 9/21~9/30 평일 2시간 × 8일 = 16h(9월), 10/1~10/20 평일 2시간 × 10일 = 20h(10월) → 10월 급여 36시간 모두 인정
+  it('산정 기간이 두 달에 걸쳐도 한도는 산정 기간 전체에 한 번 적용한다', () => {
+    // 9/21~9/30 평일 2시간 × 8일 = 16h, 10/1~10/20 평일 2시간 × 10일 = 20h → 10월 급여 36시간 중 20시간만 인정
     const sept = ['21', '22', '23', '24', '25', '28', '29', '30'].map((day) => twoHours(`a${day}`, `2026-09-${day}`))
     const oct = ['01', '02', '05', '06', '07', '08', '12', '13', '14', '15'].map((day) => twoHours(`b${day}`, `2026-10-${day}`))
     const summary = summarizeOvertime(sampleData({ entries: [...sept, ...oct] }), '2026-10')
-    expect(summary).toMatchObject({ overtimeMinutes: 36 * 60, recognizedMinutes: 36 * 60, unrecognizedMinutes: 0 })
+    expect(summary).toMatchObject({ overtimeMinutes: 36 * 60, recognizedMinutes: 20 * 60, unrecognizedMinutes: 16 * 60 })
+    expect(summary.records.at(-1)).toMatchObject({ monthCumulativeMinutes: 36 * 60 })
   })
 
   it('산정 기간 밖 기록은 다른 급여 월로 간다', () => {

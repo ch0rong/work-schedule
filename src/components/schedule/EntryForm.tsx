@@ -232,7 +232,7 @@ export function EntryForm(props: EntryFormProps) {
     return list
   }, [candidate, data])
 
-  /** 월(1일~말일)·주(월~일) 연장근무 한도를 넘으면 저장하지 않는다 */
+  /** 월(산정 기간)·주(월~일) 연장근무 한도를 넘으면 저장하지 않는다 */
   const limitErrors = useMemo(() => (candidate?.kind === 'work' ? getOvertimeLimitErrors(data, candidate) : []), [candidate, data])
 
   function update(patch: Partial<FormValues>) {

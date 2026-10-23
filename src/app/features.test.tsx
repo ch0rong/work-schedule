@@ -238,7 +238,7 @@ describe('연장근무·매식비', () => {
 
     expect(store.getState().data.entries[0]).toMatchObject({ overtime: [{ startTime: '18:00', endTime: '19:30', endsNextDay: false }] })
     // 10/19 → 11월 급여 산정 기간(10/21~)이 아니라 10월 급여(9/21~10/20)
-    const card = screen.getByText(/10월 연장근무 한도/).closest('.stat-card')!
+    const card = screen.getByText(/연장근무 한도 \(9\/21~10\/20\)/).closest('.stat-card')!
     expect(card).toHaveTextContent('1시간 30분')
     expect(card).toHaveTextContent('이번 주 1시간 30분 / 12시간')
     expect(screen.getByText(/10월 급여 연장·휴일수당/).closest('.stat-card')).toHaveTextContent('27,075원')
@@ -305,14 +305,14 @@ describe('연장근무·매식비', () => {
     await user.click(within(dialog).getByRole('button', { name: '저장' }))
     expect(store.getState().data.entries[0]).toMatchObject({ endTime: '00:00', endsNextDay: true })
   })
-  it('월(1일~말일) 20시간을 넘기면 오류를 보여주고 저장하지 않는다', async () => {
+  it('월(산정 기간 21일~20일) 20시간을 넘기면 오류를 보여주고 저장하지 않는다', async () => {
     // 10월 평일 2시간 × 10일 = 20시간 (주별 4·8·8시간)
     const days = ['01', '02', '05', '06', '07', '08', '12', '13', '14', '15']
     const entries = days.map((day) => overtimeEntry(`o${day}`, `2026-10-${day}`, '18:00', '20:00'))
     const { user, store } = setup(sampleData({ entries }))
     const dialog = await openAdd(user, '근무')
     await user.click(within(dialog).getByRole('button', { name: '연장근무 추가' }))
-    expect(within(dialog).getByText(/월 한도\(2026-10-01 ~ 2026-10-31\)/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/월 한도\(2026-09-21 ~ 2026-10-20\)/)).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: '저장' }))
     expect(store.getState().data.entries).toHaveLength(10)
     expect(within(dialog).getByText(/저장할 수 없습니다. 연장근무 시간을 줄이세요/)).toBeInTheDocument()
@@ -421,20 +421,20 @@ describe('휴가·근태·출장', () => {
 })
 
 describe('연장근무 요약 카드', () => {
-  it('한도(1일~말일)와 정산(21일~20일)을 따로 보여주고, 정산 금액에 휴일근무 수당도 넣는다', () => {
+  it('한도는 오늘이 속한 산정 기간(21일~20일)으로 보여주고, 정산 금액에 휴일근무 수당도 넣는다', () => {
     const holiday = workEntry({ id: 'h', workTypeId: 'holiday-work', date: '2026-10-11', endDate: '2026-10-11', startTime: '09:00', endTime: '13:00', breakMinutes: 0, holidayCompensation: 'allowance' })
     setup(
       sampleData({
         entries: [
-          overtimeEntry('sep', '2026-09-22', '18:00', '21:00'), // 9월 한도 · 10월 급여
-          overtimeEntry('oct', '2026-10-13', '18:00', '20:00'), // 10월 한도 · 10월 급여
-          overtimeEntry('late', '2026-10-26', '18:00', '22:00'), // 10월 한도 · 11월 급여
-          holiday, // 휴일 4시간: 10월 한도 · 10월 급여
+          overtimeEntry('sep', '2026-09-22', '18:00', '21:00'), // 9/21~10/20 한도 · 10월 급여
+          overtimeEntry('oct', '2026-10-13', '18:00', '20:00'), // 9/21~10/20 한도 · 10월 급여
+          overtimeEntry('late', '2026-10-26', '18:00', '22:00'), // 10/21~11/20 한도 · 11월 급여
+          holiday, // 휴일 4시간: 9/21~10/20 한도 · 10월 급여
         ],
       }),
     )
-    const limit = screen.getByText(/10월 연장근무 한도 \(10\/1~10\/31\)/).closest('.stat-card')!
-    expect(limit).toHaveTextContent('10시간 / 20시간') // 2 + 4 + 휴일 4
+    const limit = screen.getByText(/연장근무 한도 \(9\/21~10\/20\)/).closest('.stat-card')! // 오늘 10/19
+    expect(limit).toHaveTextContent('9시간 / 20시간') // 3 + 2 + 휴일 4
     const pay = screen.getByText(/10월 급여 연장·휴일수당 \(9\/21~10\/20\)/).closest('.stat-card')!
     expect(pay).toHaveTextContent('162,450원') // 연장 5시간 90,250원 + 휴일 4시간 72,200원
     expect(pay).toHaveTextContent('연장 5시간 · 휴일수당 4시간')

@@ -144,8 +144,8 @@ export function PayPage() {
               {pay.overtime.unrecognizedMinutes > 0 && <strong className="text-danger"> · 미인정 {formatMinutes(pay.overtime.unrecognizedMinutes)}</strong>}
             </p>
             <p className="muted small">
-              한도는 월(1일~말일) {formatMinutes(data.settings.overtime.capMinutes)} · 주(월~일) {formatMinutes(data.settings.overtime.weeklyCapMinutes)} 기준입니다. 누적은 해당 날짜가
-              속한 달·주의 값입니다.
+              한도는 월(산정 기간 {data.settings.overtime.periodStartDay}일~다음 달 {data.settings.overtime.periodStartDay - 1 || '말'}일) {formatMinutes(data.settings.overtime.capMinutes)} · 주(월~일) {formatMinutes(data.settings.overtime.weeklyCapMinutes)} 기준입니다. 누적은 해당 날짜가
+              속한 산정 기간·주의 값입니다.
             </p>
             {pay.overtime.records.length === 0 ? (
               <p className="muted">이 산정 기간에 연장근무 기록이 없습니다.</p>

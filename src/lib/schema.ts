@@ -232,7 +232,7 @@ export const settingsSchema = z.object({
     hourlyRate: won,
     unitMinutes: z.number().int().min(1).max(120),
     periodStartDay: z.number().int().min(1).max(28),
-    /** 월(1일~말일) 한도. 넘는 입력은 저장하지 않는다 */
+    /** 월(산정 기간 periodStartDay일~다음 달 전날) 한도. 넘는 입력은 저장하지 않는다 */
     capMinutes: minutes,
     /** 주(월~일) 한도. 이전 데이터에 없으면 12시간 */
     weeklyCapMinutes: minutes.default(12 * 60),

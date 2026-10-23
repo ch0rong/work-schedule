@@ -1,13 +1,13 @@
 import { addDaysToDateString, addMonthsToMonthString, timeToMinutes } from '../../lib/date'
 import { segmentRange, type AppData, type OvertimeSegment, type WorkEntry } from '../../lib/schema'
 import { holidayWorkResult } from '../holidayWork/holidayWorkService'
-import { calculateElapsedMinutes, dayNumber, formatMinutes, MINUTES_PER_DAY, monthRange, weekRange, type DateRange } from '../../lib/time'
+import { calculateElapsedMinutes, dayNumber, formatMinutes, MINUTES_PER_DAY, weekRange, type DateRange } from '../../lib/time'
 
 // ---------- 산정 기간 ----------
 
 /*
  * 기간 기준 두 가지를 분리한다.
- * - 한도 체크: 월(1일~말일) capMinutes, 주(월~일) weeklyCapMinutes. 넘는 입력은 저장하지 않는다.
+ * - 한도 체크: 월(산정 기간 periodStartDay일 ~ 다음 달 전날) capMinutes, 주(월~일) weeklyCapMinutes. 넘는 입력은 저장하지 않는다.
  * - 수당 정산: 산정 기간(periodStartDay일 ~ 다음 달 전날). 급여 월 M = (M-1)월 21일 ~ M월 20일.
  * 연장근무는 근무일(entry.date)의 기간에 속한다.
  */
@@ -71,7 +71,7 @@ export function suggestNextSegment(entry: Pick<WorkEntry, 'startTime' | 'endTime
   return { startTime: fmt(lastEnd), endTime: fmt(end), endsNextDay: end > MINUTES_PER_DAY }
 }
 
-// ---------- 한도 (월 1일~말일, 주 월~일) ----------
+// ---------- 한도 (월 산정 기간, 주 월~일) ----------
 
 /** 주 한도는 월요일 시작 */
 const WEEK_STARTS_ON_MONDAY = 1
@@ -80,8 +80,9 @@ export function capWeek(date: string): DateRange {
   return weekRange(date, WEEK_STARTS_ON_MONDAY)
 }
 
-export function capMonth(date: string): DateRange {
-  return monthRange(date.slice(0, 7))
+/** 날짜가 속한 산정 기간. 시작일 21이면 10/25 → 10/21~11/20, 10/10 → 9/21~10/20 */
+export function capMonth(date: string, periodStartDay: number): DateRange {
+  return overtimePeriod(payMonthForDate(date, periodStartDay), periodStartDay)
 }
 
 interface OvertimeItem {
@@ -152,11 +153,11 @@ function usage(items: OvertimeItem[], range: DateRange, capMinutes: number): Cap
   }
 }
 
-/** 날짜가 속한 월(1일~말일)·주(월~일)의 한도 사용량 */
+/** 날짜가 속한 산정 기간(21일~20일)·주(월~일)의 한도 사용량 */
 export function capUsage(data: AppData, date: string): { month: CapUsage; week: CapUsage } {
   const items = overtimeItems(data)
-  const { capMinutes, weeklyCapMinutes } = data.settings.overtime
-  return { month: usage(items, capMonth(date), capMinutes), week: usage(items, capWeek(date), weeklyCapMinutes) }
+  const { capMinutes, weeklyCapMinutes, periodStartDay } = data.settings.overtime
+  return { month: usage(items, capMonth(date, periodStartDay), capMinutes), week: usage(items, capWeek(date), weeklyCapMinutes) }
 }
 
 /**
@@ -189,7 +190,7 @@ export interface OvertimeRecord {
   minutes: number
   /** 월·주 한도 안에서 인정된 분 */
   recognizedMinutes: number
-  /** 이 기록까지 그 달(1일~말일)의 한도 누적 분 */
+  /** 이 기록까지 그 산정 기간(21일~20일)의 한도 누적 분 */
   monthCumulativeMinutes: number
   /** 이 기록까지 그 주(월~일)의 한도 누적 분 */
   weekCumulativeMinutes: number
@@ -221,7 +222,7 @@ export function summarizeOvertime(data: AppData, payMonth: string): OvertimeSumm
   const weekCounted = new Map<string, number>()
 
   const all: OvertimeRecord[] = overtimeItems(data).map((item) => {
-    const monthKey = item.date.slice(0, 7)
+    const monthKey = payMonthForDate(item.date, rules.periodStartDay)
     const weekKey = capWeek(item.date).start
     const month = monthCounted.get(monthKey) ?? 0
     const week = weekCounted.get(weekKey) ?? 0
