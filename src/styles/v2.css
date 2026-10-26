@@ -109,6 +109,14 @@
   color: var(--color-warning);
 }
 
+/* 대화상자 안 이전·다음 이동 */
+.dialog-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
 /* ---------- 요약 카드 ---------- */
 .stat-warning {
   border-color: var(--color-warning);

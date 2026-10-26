@@ -159,6 +159,44 @@ export function capUsage(data: AppData, date: string): { month: CapUsage; week: 
   return { month: usage(items, capMonth(date, periodStartDay), capMinutes), week: usage(items, capWeek(date), weeklyCapMinutes) }
 }
 
+export interface CapDay {
+  date: string
+  items: { entryId: string; source: OvertimeItem['source']; startTime: string; endTime: string; minutes: number }[]
+  /** 그날 한도 대상 합계 */
+  minutes: number
+  /** 이 날까지 산정 기간 누적 */
+  cumulativeMinutes: number
+}
+
+/** 날짜가 속한 산정 기간의 한도 사용량과 날짜별 내역 (한도 대상 시간만) */
+export function capBreakdown(data: AppData, date: string): { usage: CapUsage; days: CapDay[] } {
+  const usageNow = capUsage(data, date).month
+  const { start, end } = usageNow.range
+  const clockOf = (absolute: number) => {
+    const inDay = ((absolute % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY
+    return `${String(Math.floor(inDay / 60)).padStart(2, '0')}:${String(inDay % 60).padStart(2, '0')}`
+  }
+  const days: CapDay[] = []
+  let cumulative = 0
+  for (const item of overtimeItems(data)) {
+    if (!item.countsTowardCap || item.date < start || item.date > end) continue
+    let day = days.at(-1)
+    if (!day || day.date !== item.date) {
+      day = { date: item.date, items: [], minutes: 0, cumulativeMinutes: 0 }
+      days.push(day)
+    }
+    // 휴일근무 수당은 실제 근무 시각, 연장근무는 구간 시각
+    const entry = item.source === 'holiday-allowance' ? data.entries.find((candidate) => candidate.id === item.entryId) : undefined
+    const startTime = entry?.kind === 'work' ? entry.startTime : clockOf(item.start)
+    const endTime = entry?.kind === 'work' ? entry.endTime : clockOf(item.start + item.minutes)
+    day.items.push({ entryId: item.entryId, source: item.source, startTime, endTime, minutes: item.minutes })
+    day.minutes += item.minutes
+    cumulative += item.minutes
+    day.cumulativeMinutes = cumulative
+  }
+  return { usage: usageNow, days }
+}
+
 /**
  * 저장하려는 근무가 월·주 한도를 넘기면 오류(저장 차단).
  * 이미 한도를 넘은 과거 데이터는 그대로 두고, 이번 저장으로 한도 대상 시간이 늘어날 때만 막는다.

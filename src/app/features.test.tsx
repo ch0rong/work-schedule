@@ -456,6 +456,24 @@ describe('연장근무 요약 카드', () => {
   })
 })
 
+describe('연장근무 누적 패널', () => {
+  it('누적·한도 카드를 누르면 날짜별 내역을 보여주고 다음 기간으로 넘길 수 있다', async () => {
+    const holiday = workEntry({ id: 'h', workTypeId: 'holiday-work', date: '2026-10-11', endDate: '2026-10-11', startTime: '09:00', endTime: '13:00', breakMinutes: 0, holidayCompensation: 'allowance' })
+    const { user } = setup(
+      sampleData({ entries: [overtimeEntry('a', '2026-09-22', '18:00', '21:00'), holiday, overtimeEntry('late', '2026-10-26', '18:00', '22:00')] }),
+    )
+    await user.click(screen.getByRole('button', { name: /연장근무 누적·한도/ }))
+    const dialog = screen.getByRole('dialog', { name: /연장근무 누적 \(9\/21 \(월\) ~ 10\/20 \(화\)\)/ })
+    const rows = within(dialog).getAllByRole('row').slice(1)
+    expect(rows.map((row) => row.textContent)).toEqual(['9/22 (화)연장 18:00~21:003시간3시간', '10/11 (일)휴일근무(수당) 09:00~13:004시간7시간'])
+    expect(dialog).toHaveTextContent('누적 7시간 / 20시간 · 잔여 13시간')
+
+    await user.click(within(dialog).getByRole('button', { name: '다음 기간' }))
+    const next = screen.getByRole('dialog', { name: /10\/21 \(수\) ~ 11\/20 \(금\)/ })
+    expect(within(next).getAllByRole('row').slice(1).map((row) => row.textContent)).toEqual(['10/26 (월)연장 18:00~22:004시간4시간'])
+  })
+})
+
 describe('잔여 대체휴무 카드', () => {
   it('아직 발생일이 안 된 대체휴무는 회색 글씨로 발생 예정을 보여준다', () => {
     setup(sampleData({ entries: [workEntry({ id: 'd', workTypeId: 'weekend-duty', date: '2026-10-24', endDate: '2026-10-24' })] }))

@@ -10,6 +10,7 @@ import { DayEntryList } from '../schedule/DayEntryList'
 import { WorkBulkDialog } from '../schedule/DutyBulkDialog'
 import { SummaryCards } from '../summary/SummaryCards'
 import { TodoList } from '../todo/TodoList'
+import { CapPanel } from './CapPanel'
 import { MealPanel } from './MealPanel'
 import { ScheduleCalendar, type VisibleRange } from './ScheduleCalendar'
 import { TravelPanel } from './TravelPanel'
@@ -23,6 +24,7 @@ export function CalendarPage() {
   const [dialog, setDialog] = useState<EntryDialogTarget | null>(null)
   const [mealPanel, setMealPanel] = useState<{ month: string; focusDate?: string } | null>(null)
   const [travelMonth, setTravelMonth] = useState<string | null>(null)
+  const [capDate, setCapDate] = useState<string | null>(null)
   const [bulkOpen, setBulkOpen] = useState(false)
   const mealDates = useMemo(() => new Set(mealOccurrenceDates(data).keys()), [data])
 
@@ -47,6 +49,7 @@ export function CalendarPage() {
         today={today}
         onOpenMeal={() => setMealPanel({ month })}
         onOpenTravel={() => setTravelMonth(month)}
+        onOpenCap={setCapDate}
       />
 
       <div className="calendar-layout">
@@ -86,6 +89,15 @@ export function CalendarPage() {
       <EntryDialog target={dialog} onClose={() => setDialog(null)} />
       <WorkBulkDialog open={bulkOpen} initialMonth={month} onClose={() => setBulkOpen(false)} />
       <MealPanel key={mealPanel ? `${mealPanel.month}-${mealPanel.focusDate ?? ''}` : 'closed'} month={mealPanel?.month ?? null} focusDate={mealPanel?.focusDate} onClose={() => setMealPanel(null)} />
+      <CapPanel
+        date={capDate}
+        onChangeDate={setCapDate}
+        onClose={() => setCapDate(null)}
+        onSelectEntry={(entry) => {
+          setCapDate(null)
+          openEntry(entry)
+        }}
+      />
       <TravelPanel
         month={travelMonth}
         onClose={() => setTravelMonth(null)}

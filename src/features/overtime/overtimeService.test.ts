@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { overtimeEntry, sampleData, tripEntry, workEntry } from '../../test/fixtures'
 import {
   afterWorkOvertimeMinutes,
+  capBreakdown,
   capMonth,
   capUsage,
   capWeek,
@@ -300,5 +301,36 @@ describe('출장·연장근무 시간 중복', () => {
     expect(getTripOverlapErrors(sampleData({ entries: [trip()] }), workEntry({ id: 'w', date: '2026-10-19', endDate: '2026-10-19' }))).toEqual([])
     expect(getTripOverlapErrors(sampleData({ entries: [trip({ date: '2026-10-20', endDate: '2026-10-20' })] }), overtimeEntry('w', '2026-10-19', '18:00', '20:00'))).toEqual([])
     expect(getTripOverlapErrors(sampleData({ entries: [trip()] }), sampleData().entries[1])).toEqual([])
+  })
+})
+
+describe('capBreakdown — 산정 기간 날짜별 한도 내역', () => {
+  it('기간 안의 연장근무·휴일근무 수당 시간을 날짜순으로 모으고 누적한다', () => {
+    const holiday = workEntry({ id: 'h', workTypeId: 'holiday-work', date: '2026-11-28', endDate: '2026-11-28', startTime: '13:00', endTime: '18:00', breakMinutes: 0, holidayCompensation: 'allowance' })
+    const comp = workEntry({ id: 'c', workTypeId: 'holiday-work', date: '2026-11-29', endDate: '2026-11-29', holidayCompensation: 'comp-leave' })
+    const twoSegments = workEntry({
+      id: 'o',
+      date: '2026-11-27',
+      endDate: '2026-11-27',
+      overtime: [
+        { startTime: '07:00', endTime: '09:00', endsNextDay: false },
+        { startTime: '18:00', endTime: '18:30', endsNextDay: false },
+      ],
+    })
+    const outside = overtimeEntry('x', '2026-11-20', '18:00', '20:00') // 이전 기간
+    const { usage, days } = capBreakdown(sampleData({ entries: [holiday, comp, twoSegments, outside] }), '2026-12-01')
+    expect(usage).toMatchObject({ range: { start: '2026-11-21', end: '2026-12-20' }, countedMinutes: 450 })
+    expect(days).toEqual([
+      {
+        date: '2026-11-27',
+        items: [
+          { entryId: 'o', source: 'overtime', startTime: '07:00', endTime: '09:00', minutes: 120 },
+          { entryId: 'o', source: 'overtime', startTime: '18:00', endTime: '18:30', minutes: 30 },
+        ],
+        minutes: 150,
+        cumulativeMinutes: 150,
+      },
+      { date: '2026-11-28', items: [{ entryId: 'h', source: 'holiday-allowance', startTime: '13:00', endTime: '18:00', minutes: 300 }], minutes: 300, cumulativeMinutes: 450 },
+    ])
   })
 })

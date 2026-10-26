@@ -14,15 +14,18 @@ interface SummaryCardsProps {
   today: string
   onOpenMeal: () => void
   onOpenTravel: () => void
+  /** 한도 카드가 보여주는 산정 기간 안의 날짜로 누적 내역을 연다 */
+  onOpenCap: (date: string) => void
 }
 
 /** 메인 달력 요약: 산정 기간(21일~20일) 연장근무 한도(휴일근무 수당 시간 포함)·연장·휴일수당, 매식비, 출장비, 잔여 연차·대체휴무 */
-export function SummaryCards({ month, today, onOpenMeal, onOpenTravel }: SummaryCardsProps) {
+export function SummaryCards({ month, today, onOpenMeal, onOpenTravel, onOpenCap }: SummaryCardsProps) {
   const { data } = useAppState()
   const minutesPerDay = data.settings.leave.minutesPerDay
   const overtime = summarizeOvertime(data, month)
   // 이번 달을 보고 있으면 오늘이 속한 산정 기간(21일 이후면 다음 급여 월), 아니면 이 월 급여의 산정 기간
-  const limits = capUsage(data, today.startsWith(month) ? today : `${month}-01`)
+  const capDate = today.startsWith(month) ? today : `${month}-01`
+  const limits = capUsage(data, capDate)
   const meals = summarizeMeals(data, month)
   const travel = monthlyTravel(data, month)
   const period = leavePeriodFor(today, data.settings)
@@ -38,18 +41,16 @@ export function SummaryCards({ month, today, onOpenMeal, onOpenTravel }: Summary
 
   return (
     <section aria-label="요약" className="summary-grid">
-      <div className={`stat-card ${limits.month.exceededMinutes > 0 ? 'stat-warning' : ''}`}>
-        <p className="stat-label">
-          연장근무 누적·한도 ({capLabel})
-        </p>
-        <p className="stat-value">
+      <button type="button" className={`stat-card stat-button ${limits.month.exceededMinutes > 0 ? 'stat-warning' : ''}`} onClick={() => onOpenCap(capDate)}>
+        <span className="stat-label">연장근무 누적·한도 ({capLabel})</span>
+        <span className="stat-value">
           {formatMinutes(limits.month.countedMinutes)} <span className="stat-unit">/ {formatMinutes(limits.month.capMinutes)}</span>
-        </p>
-        <p className="stat-sub">
+        </span>
+        <span className="stat-sub">
           {limits.month.exceededMinutes > 0 ? `한도 초과 ${formatMinutes(limits.month.exceededMinutes)}` : `잔여 ${formatMinutes(limits.month.remainingMinutes)}`}
-          {today.startsWith(month) && ` · 이번 주 ${formatMinutes(limits.week.countedMinutes)} / ${formatMinutes(limits.week.capMinutes)}`}
-        </p>
-      </div>
+          {today.startsWith(month) && ` · 이번 주 ${formatMinutes(limits.week.countedMinutes)} / ${formatMinutes(limits.week.capMinutes)}`} — 눌러서 날짜별 보기
+        </span>
+      </button>
       <div className={`stat-card ${overtime.unrecognizedMinutes > 0 ? 'stat-warning' : ''}`}>
         <p className="stat-label">
           {monthLabel} 급여 연장·휴일수당 ({periodLabel})
