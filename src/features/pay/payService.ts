@@ -147,7 +147,7 @@ export function estimateMonthlyPay(data: AppData, month: string, isHoliday: (dat
   const record = data.payrollRecords[month] ?? null
 
   const notes = [
-    `연장근무 수당은 산정 기간(${overtime.period.start} ~ ${overtime.period.end}) 실적입니다. 한도(월 산정 기간 ${formatMinutes(rules.capMinutes)}, 주 월~일 ${formatMinutes(rules.weeklyCapMinutes)})를 넘는 입력은 저장할 수 없고, 이전에 입력된 초과분은 미인정(0원)입니다.`,
+    `연장근무 수당은 산정 기간(${overtime.period.start} ~ ${overtime.period.end}) 실적입니다. 한도(월 산정 기간 ${formatMinutes(rules.capMinutes)}, 주 월~일 ${formatMinutes(rules.weeklyCapMinutes)}, 시간 단위 휴일근무 수당 포함)를 넘는 입력은 저장할 수 없고, 이전에 입력된 초과분은 미인정(0원)입니다.`,
     '출장비는 급여와 별도로 지급되어 예상 실수령액에 포함하지 않습니다.',
     `소득세는 국세청 근로소득 간이세액표(${TAX_TABLE.effectiveFrom} 시행)로 원천징수 비율 100% 기준 계산한 예상액입니다. 비과세로 표시한 지급 항목(${formatWon(taxFree)})은 과세급여에서 뺐습니다.`,
   ]

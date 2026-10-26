@@ -238,7 +238,7 @@ describe('연장근무·매식비', () => {
 
     expect(store.getState().data.entries[0]).toMatchObject({ overtime: [{ startTime: '18:00', endTime: '19:30', endsNextDay: false }] })
     // 10/19 → 11월 급여 산정 기간(10/21~)이 아니라 10월 급여(9/21~10/20)
-    const card = screen.getByText(/연장근무 한도 \(9\/21~10\/20\)/).closest('.stat-card')!
+    const card = screen.getByText(/연장근무 누적·한도 \(9\/21~10\/20\)/).closest('.stat-card')!
     expect(card).toHaveTextContent('1시간 30분')
     expect(card).toHaveTextContent('이번 주 1시간 30분 / 12시간')
     expect(screen.getByText(/10월 급여 연장·휴일수당/).closest('.stat-card')).toHaveTextContent('27,075원')
@@ -349,6 +349,20 @@ describe('휴가·근태·출장', () => {
     expect(within(dayPanel()).getByText('25,000원')).toBeInTheDocument()
   })
 
+  it('출장 시간이 연장근무와 겹치면 알림을 띄우고 저장하지 않는다', async () => {
+    const work = overtimeEntry('w', '2026-10-19', '18:00', '20:00')
+    const { user, store } = setup(sampleData({ entries: [work] }))
+    const dialog = await openAdd(user, '출장') // 기본 09:00~13:00
+    await pickTime(user, dialog, '복귀 시각', '19:00')
+    expect(within(dialog).getByText('출장·연장근무 시간 중복 — 저장할 수 없습니다')).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: '저장' }))
+    expect(store.getState().data.entries).toHaveLength(1)
+    expect(within(dialog).getByText(/출장 시간과 연장근무 시간이 겹쳐 저장할 수 없습니다/)).toBeInTheDocument()
+    await pickTime(user, dialog, '복귀 시각', '18:00') // 맞닿는 것은 허용
+    await user.click(within(dialog).getByRole('button', { name: '저장' }))
+    expect(store.getState().data.entries).toHaveLength(2)
+  })
+
   it('대체휴무를 쓸 때 어느 날 발생한 것을 쓸지 고른다', async () => {
     const dutyA = workEntry({ id: 'a', workTypeId: 'weekend-duty', date: '2026-10-10', endDate: '2026-10-10' })
     const dutyB = workEntry({ id: 'b', workTypeId: 'weekend-duty', date: '2026-10-17', endDate: '2026-10-17' })
@@ -421,20 +435,21 @@ describe('휴가·근태·출장', () => {
 })
 
 describe('연장근무 요약 카드', () => {
-  it('한도는 오늘이 속한 산정 기간(21일~20일)으로 보여주고, 정산 금액에 휴일근무 수당도 넣는다', () => {
+  it('한도 누적은 오늘이 속한 산정 기간(21일~20일)에 휴일근무 수당 시간까지 합치고, 정산 금액에 휴일근무 수당도 넣는다', () => {
     const holiday = workEntry({ id: 'h', workTypeId: 'holiday-work', date: '2026-10-11', endDate: '2026-10-11', startTime: '09:00', endTime: '13:00', breakMinutes: 0, holidayCompensation: 'allowance' })
     setup(
       sampleData({
         entries: [
-          overtimeEntry('sep', '2026-09-22', '18:00', '21:00'), // 9/21~10/20 한도 · 10월 급여
-          overtimeEntry('oct', '2026-10-13', '18:00', '20:00'), // 9/21~10/20 한도 · 10월 급여
-          overtimeEntry('late', '2026-10-26', '18:00', '22:00'), // 10/21~11/20 한도 · 11월 급여
-          holiday, // 휴일 4시간: 9/21~10/20 한도 · 10월 급여
+          overtimeEntry('sep', '2026-09-22', '18:00', '21:00'), // 10월 급여 기간
+          overtimeEntry('oct', '2026-10-13', '18:00', '20:00'), // 10월 급여 기간
+          overtimeEntry('late', '2026-10-26', '18:00', '22:00'), // 11월 급여 기간
+          holiday, // 휴일 4시간: 10월 급여 기간
         ],
       }),
     )
-    const limit = screen.getByText(/연장근무 한도 \(9\/21~10\/20\)/).closest('.stat-card')! // 오늘 10/19
+    const limit = screen.getByText(/연장근무 누적·한도 \(9\/21~10\/20\)/).closest('.stat-card')!
     expect(limit).toHaveTextContent('9시간 / 20시간') // 3 + 2 + 휴일 4
+    expect(limit).toHaveTextContent('잔여 11시간')
     const pay = screen.getByText(/10월 급여 연장·휴일수당 \(9\/21~10\/20\)/).closest('.stat-card')!
     expect(pay).toHaveTextContent('162,450원') // 연장 5시간 90,250원 + 휴일 4시간 72,200원
     expect(pay).toHaveTextContent('연장 5시간 · 휴일수당 4시간')

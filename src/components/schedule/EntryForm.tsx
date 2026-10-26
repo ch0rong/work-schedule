@@ -16,7 +16,7 @@ import {
   isSingleDayType,
   LEAVE_LABELS,
 } from '../../features/leave/leaveService'
-import { afterWorkOvertimeMinutes, capUsage, getOvertimeLimitErrors, overtimeAmount, overtimeMinutes, suggestNextSegment } from '../../features/overtime/overtimeService'
+import { afterWorkOvertimeMinutes, capUsage, getOvertimeLimitErrors, getTripOverlapErrors, overtimeAmount, overtimeMinutes, suggestNextSegment } from '../../features/overtime/overtimeService'
 import { formatWon } from '../../features/pay/payService'
 import { createId, defaultShift, flexShift, getEntryWarnings, holidayWorkShift, isWeekendOrHoliday, upsertEntry } from '../../features/schedules/scheduleService'
 import { dailyTravel, isMultiDayTrip, tripAmount, tripMinutes } from '../../features/travel/travelService'
@@ -234,6 +234,8 @@ export function EntryForm(props: EntryFormProps) {
 
   /** 월(산정 기간)·주(월~일) 연장근무 한도를 넘으면 저장하지 않는다 */
   const limitErrors = useMemo(() => (candidate?.kind === 'work' ? getOvertimeLimitErrors(data, candidate) : []), [candidate, data])
+  /** 출장과 연장근무(휴일근무 포함) 시간이 겹치면 저장하지 않는다 */
+  const overlapErrors = useMemo(() => (candidate ? getTripOverlapErrors(data, candidate) : []), [candidate, data])
 
   function update(patch: Partial<FormValues>) {
     setValues((current) => {
@@ -323,6 +325,10 @@ export function EntryForm(props: EntryFormProps) {
     const blocking = parsed.data.kind === 'work' ? getOvertimeLimitErrors(data, parsed.data) : []
     if (blocking.length > 0) {
       setErrors({ form: '연장근무 한도를 넘어 저장할 수 없습니다. 연장근무 시간을 줄이세요.' })
+      return
+    }
+    if (getTripOverlapErrors(data, parsed.data).length > 0) {
+      setErrors({ form: '출장 시간과 연장근무 시간이 겹쳐 저장할 수 없습니다. 시간을 조정하세요.' })
       return
     }
     if (warnings.length > 0 && !acknowledged) {
@@ -493,6 +499,7 @@ export function EntryForm(props: EntryFormProps) {
       </div>
 
       {limitErrors.length > 0 && <ErrorMessage title="연장근무 한도 초과 — 저장할 수 없습니다" messages={limitErrors} />}
+      {overlapErrors.length > 0 && <ErrorMessage title="출장·연장근무 시간 중복 — 저장할 수 없습니다" messages={overlapErrors} />}
 
       {warnings.length > 0 && (
         <div className="alert alert-warning" role="alert">
@@ -565,10 +572,19 @@ function WorkFields({
   const rate = settings.overtime.hourlyRate
   const overtimeTotal = candidate ? overtimeMinutes(candidate) : null
   const limits = useMemo(() => {
-    if (!candidate || candidate.overtime.length === 0) return null
+    if (!candidate) return null
+    const countsTowardCap =
+      category === 'holiday-work' ? holidayWorkResult(candidate, data.settings).allowanceMinutes > 0 : candidate.overtime.length > 0
+    if (!countsTowardCap) return null
     const next = { ...data, entries: [...data.entries.filter((entry) => entry.id !== candidate.id), candidate] }
     return capUsage(next, candidate.date)
-  }, [candidate, data])
+  }, [candidate, category, data])
+  const limitsLine = limits && (
+    <p className="muted small">
+      월 한도({limits.month.range.start.slice(5)} ~ {limits.month.range.end.slice(5)}) {formatMinutes(limits.month.countedMinutes)} / {formatMinutes(limits.month.capMinutes)} · 주
+      한도({limits.week.range.start.slice(5)} ~ {limits.week.range.end.slice(5)}) {formatMinutes(limits.week.countedMinutes)} / {formatMinutes(limits.week.capMinutes)}
+    </p>
+  )
   const mealEarned = candidate ? afterWorkOvertimeMinutes(candidate) >= settings.meal.minOvertimeMinutes && afterWorkOvertimeMinutes(candidate) > 0 : false
 
   const setSegment = (index: number, patch: Partial<OvertimeSegment>) =>
@@ -690,6 +706,7 @@ function WorkFields({
                 )}
                 {candidate && holidayWorkEarnsMeal(candidate, settings) && <span className="badge badge-meal">매식비</span>}
               </p>
+              {limitsLine}
             </div>
           )}
         </fieldset>
@@ -741,12 +758,7 @@ function WorkFields({
                 총 연장 <strong>{formatMinutes(overtimeTotal)}</strong> · 예상 수당 <strong>{formatWon(overtimeAmount(overtimeTotal, settings.overtime.hourlyRate))}</strong>
                 {mealEarned && <span className="badge badge-meal">매식비</span>}
               </p>
-              {limits && (
-                <p className="muted small">
-                  월 한도({limits.month.range.start.slice(5)} ~ {limits.month.range.end.slice(5)}) {formatMinutes(limits.month.countedMinutes)} / {formatMinutes(limits.month.capMinutes)} · 주
-                  한도({limits.week.range.start.slice(5)} ~ {limits.week.range.end.slice(5)}) {formatMinutes(limits.week.countedMinutes)} / {formatMinutes(limits.week.capMinutes)}
-                </p>
-              )}
+              {limitsLine}
             </div>
           )}
         </fieldset>

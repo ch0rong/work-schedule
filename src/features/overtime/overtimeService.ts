@@ -1,14 +1,14 @@
 import { addDaysToDateString, addMonthsToMonthString, timeToMinutes } from '../../lib/date'
-import { segmentRange, type AppData, type OvertimeSegment, type WorkEntry } from '../../lib/schema'
+import { segmentRange, type AppData, type Entry, type OvertimeSegment, type TripEntry, type WorkEntry } from '../../lib/schema'
 import { holidayWorkResult } from '../holidayWork/holidayWorkService'
+import { TRIP_LABELS } from '../travel/travelService'
 import { calculateElapsedMinutes, dayNumber, formatMinutes, MINUTES_PER_DAY, weekRange, type DateRange } from '../../lib/time'
 
 // ---------- 산정 기간 ----------
 
 /*
- * 기간 기준 두 가지를 분리한다.
- * - 한도 체크: 월(산정 기간 periodStartDay일 ~ 다음 달 전날) capMinutes, 주(월~일) weeklyCapMinutes. 넘는 입력은 저장하지 않는다.
- * - 수당 정산: 산정 기간(periodStartDay일 ~ 다음 달 전날). 급여 월 M = (M-1)월 21일 ~ M월 20일.
+ * 월 한도와 수당 정산은 같은 산정 기간(periodStartDay일 ~ 다음 달 전날)을 쓴다.
+ * 급여 월 M = (M-1)월 21일 ~ M월 20일. 주 한도는 월~일.
  * 연장근무는 근무일(entry.date)의 기간에 속한다.
  */
 
@@ -71,7 +71,7 @@ export function suggestNextSegment(entry: Pick<WorkEntry, 'startTime' | 'endTime
   return { startTime: fmt(lastEnd), endTime: fmt(end), endsNextDay: end > MINUTES_PER_DAY }
 }
 
-// ---------- 한도 (월 산정 기간, 주 월~일) ----------
+// ---------- 한도 (월 = 산정 기간 21일~20일, 주 = 월~일) ----------
 
 /** 주 한도는 월요일 시작 */
 const WEEK_STARTS_ON_MONDAY = 1
@@ -80,7 +80,7 @@ export function capWeek(date: string): DateRange {
   return weekRange(date, WEEK_STARTS_ON_MONDAY)
 }
 
-/** 날짜가 속한 산정 기간. 시작일 21이면 10/25 → 10/21~11/20, 10/10 → 9/21~10/20 */
+/** 날짜가 속한 월 한도 기간 = 그 날짜의 급여 월 산정 기간 */
 export function capMonth(date: string, periodStartDay: number): DateRange {
   return overtimePeriod(payMonthForDate(date, periodStartDay), periodStartDay)
 }
@@ -99,9 +99,8 @@ interface OvertimeItem {
  * 한도·수당 대상 시간.
  * - 연장근무 구간: 휴일근무를 뺀 모든 근무 유형에서 한도 포함
  * - 휴일근무: 연장근무 구간은 인정하지 않는다(최대 8시간). 보상은 holidayWorkResult로 분기
- *   - 8시간 미만 → 실근무만큼 수당, 한도 포함
- *   - 8시간 이상 + 수당 → 인정 시간(기본 7.5시간) 수당, 한도 포함은 설정
- *   - 대체휴무·출장(대체휴무) → 수당 없음, 한도 제외
+ *   - 시간 단위 수당(8시간 미만 실근무, 8시간 이상 + 수당 선택의 인정 시간) → 월·주 한도 포함
+ *   - 대체휴무 1일·출장(대체휴무) → 수당 없음, 한도 제외
  */
 function overtimeItems(data: AppData): OvertimeItem[] {
   const typeById = new Map(data.workTypes.map((type) => [type.id, type]))
@@ -153,7 +152,7 @@ function usage(items: OvertimeItem[], range: DateRange, capMinutes: number): Cap
   }
 }
 
-/** 날짜가 속한 산정 기간(21일~20일)·주(월~일)의 한도 사용량 */
+/** 날짜가 속한 월(산정 기간)·주(월~일)의 한도 사용량 */
 export function capUsage(data: AppData, date: string): { month: CapUsage; week: CapUsage } {
   const items = overtimeItems(data)
   const { capMinutes, weeklyCapMinutes, periodStartDay } = data.settings.overtime
@@ -190,7 +189,7 @@ export interface OvertimeRecord {
   minutes: number
   /** 월·주 한도 안에서 인정된 분 */
   recognizedMinutes: number
-  /** 이 기록까지 그 산정 기간(21일~20일)의 한도 누적 분 */
+  /** 이 기록까지 그 산정 기간(월 한도)의 누적 분 */
   monthCumulativeMinutes: number
   /** 이 기록까지 그 주(월~일)의 한도 누적 분 */
   weekCumulativeMinutes: number
@@ -262,4 +261,62 @@ export function summarizeOvertime(data: AppData, payMonth: string): OvertimeSumm
     },
     records,
   }
+}
+
+// ---------- 출장·연장근무 시간 중복 ----------
+
+interface TimeSpan {
+  /** 절대 시각(분) [start, end) */
+  start: number
+  end: number
+  label: string
+}
+
+const clock = (absolute: number) => {
+  const inDay = ((absolute % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY
+  return `${String(Math.floor(inDay / 60)).padStart(2, '0')}:${String(inDay % 60).padStart(2, '0')}`
+}
+
+/**
+ * 근무 기록의 연장근무 시간대.
+ * - 휴일근무: 근무 시간 전체(연장 구간은 인정하지 않음). 출장(대체휴무) 보상은 출장으로 처리하므로 제외
+ * - 그 밖의 유형: 연장근무 구간
+ */
+function overtimeSpans(data: AppData, entry: WorkEntry): TimeSpan[] {
+  const base = dayNumber(entry.date) * MINUTES_PER_DAY
+  const category = data.workTypes.find((type) => type.id === entry.workTypeId)?.category
+  if (category === 'holiday-work') {
+    if (holidayWorkResult(entry, data.settings).compensation === 'trip-comp') return []
+    const [start, end] = workRange(entry)
+    return [{ start: base + start, end: base + end, label: `휴일근무 ${entry.date} ${entry.startTime}~${entry.endTime}` }]
+  }
+  return entry.overtime.map((segment) => {
+    const [start, end] = segmentRange(segment)
+    return { start: base + start, end: base + end, label: `연장근무 ${entry.date} ${clock(start)}~${clock(end)}` }
+  })
+}
+
+function tripSpan(trip: TripEntry): TimeSpan {
+  const start = dayNumber(trip.date) * MINUTES_PER_DAY + timeToMinutes(trip.startTime)
+  const end = dayNumber(trip.endDate) * MINUTES_PER_DAY + timeToMinutes(trip.endTime)
+  const range = trip.endDate > trip.date ? `${trip.date} ${trip.startTime} ~ ${trip.endDate} ${trip.endTime}` : `${trip.date} ${trip.startTime}~${trip.endTime}`
+  return { start, end, label: `${TRIP_LABELS[trip.tripType]} 출장 ${range}` }
+}
+
+/**
+ * 출장 시간과 연장근무(휴일근무 포함) 시간이 겹치면 오류(저장 차단).
+ * 끝과 시작이 맞닿는 것(18:00 복귀 → 18:00 연장 시작)은 겹침이 아니다.
+ */
+export function getTripOverlapErrors(data: AppData, candidate: Entry): string[] {
+  if (candidate.kind !== 'work' && candidate.kind !== 'trip') return []
+  const others = data.entries.filter((entry) => entry.id !== candidate.id)
+  const pairs: [TimeSpan, TimeSpan][] =
+    candidate.kind === 'trip'
+      ? others.filter((entry): entry is WorkEntry => entry.kind === 'work').flatMap((work) => overtimeSpans(data, work).map((span) => [tripSpan(candidate), span] as [TimeSpan, TimeSpan]))
+      : others
+          .filter((entry): entry is TripEntry => entry.kind === 'trip')
+          .flatMap((trip) => overtimeSpans(data, candidate).map((span) => [tripSpan(trip), span] as [TimeSpan, TimeSpan]))
+  return pairs
+    .filter(([trip, overtime]) => trip.start < overtime.end && overtime.start < trip.end)
+    .map(([trip, overtime]) => `${trip.label}과 ${overtime.label} 시간이 겹칩니다. 저장할 수 없습니다.`)
 }

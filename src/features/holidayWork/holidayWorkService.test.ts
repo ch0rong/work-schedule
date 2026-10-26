@@ -41,9 +41,8 @@ describe('8시간 미만 (7.5시간 포함) — 무조건 수당', () => {
     }
   })
 
-  it('8시간 미만 수당은 설정과 관계없이 월·주 연장 한도에 포함된다', () => {
+  it('8시간 미만 수당은 월·주 연장 한도에 포함된다', () => {
     const data = sampleData({ entries: [holiday('a', '09:00', '13:00', 0, 'allowance')] })
-    expect(data.settings.overtime.holidayAllowanceCountsTowardCap).toBe(false)
     expect(capUsage(data, '2026-09-13')).toMatchObject({ month: { countedMinutes: 240 }, week: { countedMinutes: 240 } })
   })
 

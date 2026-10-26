@@ -79,7 +79,6 @@ export function createDefaultSettings(now: Date = new Date()): Settings {
       periodStartDay: 21,
       capMinutes: 20 * 60,
       weeklyCapMinutes: 12 * 60,
-      holidayAllowanceCountsTowardCap: false,
     },
     holidayWork: { allowanceMinutes: 450 },
     compLeave: { validityMonths: 1 },

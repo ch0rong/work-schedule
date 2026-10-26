@@ -9,18 +9,19 @@ import { monthlyTravel } from '../../features/travel/travelService'
 import { formatMinutes } from '../../lib/time'
 
 interface SummaryCardsProps {
-  /** 달력에서 보고 있는 월 `YYYY-MM` — 연장근무 한도는 오늘(다른 월이면 이 월 급여)의 산정 기간, 수당은 이 월 급여의 산정 기간 */
+  /** 달력에서 보고 있는 월 `YYYY-MM` — 수당은 이 월 급여의 산정 기간. 한도는 오늘(이번 달이면) 또는 이 월 급여의 산정 기간 */
   month: string
   today: string
   onOpenMeal: () => void
   onOpenTravel: () => void
 }
 
-/** 메인 달력 요약: 산정 기간(21일~20일) 연장근무 한도, 산정 기간(21일~20일) 연장·휴일수당, 매식비, 출장비, 잔여 연차·대체휴무 */
+/** 메인 달력 요약: 산정 기간(21일~20일) 연장근무 한도(휴일근무 수당 시간 포함)·연장·휴일수당, 매식비, 출장비, 잔여 연차·대체휴무 */
 export function SummaryCards({ month, today, onOpenMeal, onOpenTravel }: SummaryCardsProps) {
   const { data } = useAppState()
   const minutesPerDay = data.settings.leave.minutesPerDay
   const overtime = summarizeOvertime(data, month)
+  // 이번 달을 보고 있으면 오늘이 속한 산정 기간(21일 이후면 다음 급여 월), 아니면 이 월 급여의 산정 기간
   const limits = capUsage(data, today.startsWith(month) ? today : `${month}-01`)
   const meals = summarizeMeals(data, month)
   const travel = monthlyTravel(data, month)
@@ -30,7 +31,7 @@ export function SummaryCards({ month, today, onOpenMeal, onOpenTravel }: Summary
   const monthLabel = `${Number(month.slice(5))}월`
   const slash = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`
   const periodLabel = `${slash(overtime.period.start)}~${slash(overtime.period.end)}`
-  const limitLabel = `${slash(limits.month.range.start)}~${slash(limits.month.range.end)}`
+  const capLabel = `${slash(limits.month.range.start)}~${slash(limits.month.range.end)}`
   // 정산 금액 = 연장근무 수당 + 휴일근무 수당 (모두 산정 기간 기준, 한도 적용 후)
   const settledAmount = overtime.overtimeAmount + overtime.holidayAllowance.amount
   const settledOvertimeMinutes = overtime.recognizedMinutes - overtime.holidayAllowance.minutes
@@ -39,7 +40,7 @@ export function SummaryCards({ month, today, onOpenMeal, onOpenTravel }: Summary
     <section aria-label="요약" className="summary-grid">
       <div className={`stat-card ${limits.month.exceededMinutes > 0 ? 'stat-warning' : ''}`}>
         <p className="stat-label">
-          연장근무 한도 ({limitLabel})
+          연장근무 누적·한도 ({capLabel})
         </p>
         <p className="stat-value">
           {formatMinutes(limits.month.countedMinutes)} <span className="stat-unit">/ {formatMinutes(limits.month.capMinutes)}</span>

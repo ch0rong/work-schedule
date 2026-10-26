@@ -6,7 +6,8 @@ import { calculateNetMinutes } from '../../lib/time'
  * - 실근무 = 종료 − 시작 − 사용자가 입력한 휴게시간
  * - 최대 8시간까지만 인정. 넘는 시간은 버린다(연장 수당 없음)
  * - 8시간 이상: 대체휴무 1일 / 수당 지급(인정 시간 설정값, 기본 7.5시간) / 출장(대체휴무) 중 선택
- * - 8시간 미만(7.5시간 포함): 대체휴무 불가, 무조건 수당 = 실근무 × 시간당 수당, 월·주 연장 한도에 포함
+ * - 8시간 미만(7.5시간 포함): 대체휴무 불가, 무조건 수당 = 실근무 × 시간당 수당
+ * - 시간 단위로 보상받는 수당 시간은 항상 월(산정 기간)·주 연장 한도에 포함 (2026-10-26 사용자 확정)
  */
 export const HOLIDAY_WORK_FULL_DAY_MINUTES = 8 * 60
 
@@ -52,7 +53,7 @@ export function holidayWorkResult(entry: HolidayWorkInput, settings: Settings): 
       compensation,
       allowanceMinutes: settings.holidayWork.allowanceMinutes,
       amount: amount(settings.holidayWork.allowanceMinutes),
-      countsTowardCap: settings.overtime.holidayAllowanceCountsTowardCap,
+      countsTowardCap: true,
       earnsCompLeave: false,
     }
   }

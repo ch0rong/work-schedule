@@ -232,11 +232,11 @@ export const settingsSchema = z.object({
     hourlyRate: won,
     unitMinutes: z.number().int().min(1).max(120),
     periodStartDay: z.number().int().min(1).max(28),
-    /** 월(산정 기간 periodStartDay일~다음 달 전날) 한도. 넘는 입력은 저장하지 않는다 */
+    /** 월 한도 — 산정 기간(periodStartDay일 ~ 다음 달 전날) 기준. 넘는 입력은 저장하지 않는다 */
     capMinutes: minutes,
     /** 주(월~일) 한도. 이전 데이터에 없으면 12시간 */
     weeklyCapMinutes: minutes.default(12 * 60),
-    holidayAllowanceCountsTowardCap: z.boolean(),
+    // holidayAllowanceCountsTowardCap(휴일 수당 한도 포함 여부)은 폐지 — 시간 단위 휴일 수당은 항상 한도에 포함한다
   }),
   holidayWork: z.object({
     /** 8시간 근무 후 수당을 고를 때의 인정 시간 (기본 7.5시간) */

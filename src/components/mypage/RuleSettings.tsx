@@ -105,7 +105,7 @@ export function OvertimeSettings() {
                 min={1}
                 value={draft.overtime.periodStartDay}
                 onChange={(v) => overtime({ periodStartDay: v ?? Number.NaN })}
-                hint={`매월 ${draft.overtime.periodStartDay}일 ~ 다음 달 ${draft.overtime.periodStartDay - 1 || '말'}일 (수당 지급 기준)`}
+                hint={`매월 ${draft.overtime.periodStartDay}일 ~ 다음 달 ${draft.overtime.periodStartDay - 1 || '말'}일 (월 한도·수당 지급 기준)`}
               />
               <NumberField
                 id="ot-cap"
@@ -129,14 +129,9 @@ export function OvertimeSettings() {
                 step={0.5}
                 value={draft.holidayWork.allowanceMinutes / 60}
                 onChange={(v) => set({ ...draft, holidayWork: { ...draft.holidayWork, allowanceMinutes: Math.round((v ?? Number.NaN) * 60) } })}
-                hint="8시간 근무 후 수당 선택 시: 이 시간 × 시간당 수당. 8시간 미만은 실근무 × 시간당 수당"
+                hint="8시간 근무 후 수당 선택 시: 이 시간 × 시간당 수당. 8시간 미만은 실근무 × 시간당 수당. 수당 시간은 월·주 연장 한도에 포함"
               />
             </div>
-            <CheckboxField
-              label="휴일 8시간 근무 수당 시간도 월·주 한도에 포함 (8시간 미만 근무 수당은 항상 포함)"
-              checked={draft.overtime.holidayAllowanceCountsTowardCap}
-              onChange={(checked) => overtime({ holidayAllowanceCountsTowardCap: checked })}
-            />
           </>
         )
       }}
