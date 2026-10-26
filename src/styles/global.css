@@ -1,3 +1,17 @@
+@font-face {
+  font-family: 'YPairing';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-4@1.1/YPairingFont.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'YPairing';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-4@1.1/YPairingFont-Bd.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
   /* 기본 색상 */
   --color-bg: #f6f7f9;
@@ -38,7 +52,7 @@
   --shadow-sm: 0 1px 2px rgb(16 24 40 / 6%);
   --touch-target: 44px;
 
-  --font-sans: system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic',
+  --font-sans: 'YPairing', system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic',
     'Noto Sans KR', sans-serif;
 
   color-scheme: light;
@@ -68,6 +82,17 @@ h3,
 h4,
 p {
   margin: 0;
+}
+
+/* 제목·강조 텍스트는 굵게 */
+h1,
+h2,
+h3,
+h4,
+strong,
+b,
+th {
+  font-weight: 700;
 }
 
 button,
